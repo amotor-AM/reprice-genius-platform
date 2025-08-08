@@ -33,14 +33,32 @@ const BROWSER = typeof globalThis === "object" && ("window" in globalThis);
  * Client is an API client for the  Encore application.
  */
 export class Client {
+    public readonly adapt: adapt.ServiceClient
     public readonly analytics: analytics.ServiceClient
+    public readonly auto: auto.ServiceClient
+    public readonly behavior: behavior.ServiceClient
+    public readonly brain: brain.ServiceClient
     public readonly cache: cache.ServiceClient
-    public readonly ebay: ebay.ServiceClient
+    public readonly composer: composer.ServiceClient
+    public readonly copilot: copilot.ServiceClient
+    public readonly documents: documents.ServiceClient
+    public readonly graph: graph.ServiceClient
+    public readonly intel: intel.ServiceClient
+    public readonly jobs: jobs.ServiceClient
     public readonly learning: learning.ServiceClient
+    public readonly listings: listings.ServiceClient
+    public readonly market: market.ServiceClient
+    public readonly marketplace: marketplace.ServiceClient
     public readonly ml: ml.ServiceClient
+    public readonly moat: moat.ServiceClient
     public readonly monitoring: monitoring.ServiceClient
     public readonly notifications: notifications.ServiceClient
+    public readonly orchestrator: orchestrator.ServiceClient
+    public readonly orders: orders.ServiceClient
+    public readonly pipeline: pipeline.ServiceClient
     public readonly pricing: pricing.ServiceClient
+    public readonly profit: profit.ServiceClient
+    public readonly strategy: strategy.ServiceClient
     public readonly user: user.ServiceClient
     private readonly options: ClientOptions
     private readonly target: string
@@ -56,14 +74,32 @@ export class Client {
         this.target = target
         this.options = options ?? {}
         const base = new BaseClient(this.target, this.options)
+        this.adapt = new adapt.ServiceClient(base)
         this.analytics = new analytics.ServiceClient(base)
+        this.auto = new auto.ServiceClient(base)
+        this.behavior = new behavior.ServiceClient(base)
+        this.brain = new brain.ServiceClient(base)
         this.cache = new cache.ServiceClient(base)
-        this.ebay = new ebay.ServiceClient(base)
+        this.composer = new composer.ServiceClient(base)
+        this.copilot = new copilot.ServiceClient(base)
+        this.documents = new documents.ServiceClient(base)
+        this.graph = new graph.ServiceClient(base)
+        this.intel = new intel.ServiceClient(base)
+        this.jobs = new jobs.ServiceClient(base)
         this.learning = new learning.ServiceClient(base)
+        this.listings = new listings.ServiceClient(base)
+        this.market = new market.ServiceClient(base)
+        this.marketplace = new marketplace.ServiceClient(base)
         this.ml = new ml.ServiceClient(base)
+        this.moat = new moat.ServiceClient(base)
         this.monitoring = new monitoring.ServiceClient(base)
         this.notifications = new notifications.ServiceClient(base)
+        this.orchestrator = new orchestrator.ServiceClient(base)
+        this.orders = new orders.ServiceClient(base)
+        this.pipeline = new pipeline.ServiceClient(base)
         this.pricing = new pricing.ServiceClient(base)
+        this.profit = new profit.ServiceClient(base)
+        this.strategy = new strategy.ServiceClient(base)
         this.user = new user.ServiceClient(base)
     }
 
@@ -110,7 +146,96 @@ export interface ClientOptions {
 /**
  * Import the endpoint handlers to derive the types for the client.
  */
+import { getInstantResponse as api_adapt_instant_responder_getInstantResponse } from "~backend/adapt/instant_responder";
+import { getCurrentState as api_adapt_market_state_getCurrentState } from "~backend/adapt/market_state";
+import { getMomentOpportunities as api_adapt_moment_detector_getMomentOpportunities } from "~backend/adapt/moment_detector";
+import { switchStrategy as api_adapt_strategy_switcher_switchStrategy } from "~backend/adapt/strategy_switcher";
+import { processStreamEvent as api_adapt_stream_processor_processStreamEvent } from "~backend/adapt/stream_processor";
+
+export namespace adapt {
+
+    export class ServiceClient {
+        private baseClient: BaseClient
+
+        constructor(baseClient: BaseClient) {
+            this.baseClient = baseClient
+            this.getCurrentState = this.getCurrentState.bind(this)
+            this.getInstantResponse = this.getInstantResponse.bind(this)
+            this.getMomentOpportunities = this.getMomentOpportunities.bind(this)
+            this.processStreamEvent = this.processStreamEvent.bind(this)
+            this.switchStrategy = this.switchStrategy.bind(this)
+        }
+
+        /**
+         * Gets the current, real-time market state for an entity.
+         */
+        public async getCurrentState(params: RequestType<typeof api_adapt_market_state_getCurrentState>): Promise<ResponseType<typeof api_adapt_market_state_getCurrentState>> {
+            // Convert our params into the objects we need for the request
+            const query = makeRecord<string, string | string[]>({
+                entityId: params.entityId,
+            })
+
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/adapt/state/current`, {query, method: "GET", body: undefined})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_adapt_market_state_getCurrentState>
+        }
+
+        /**
+         * Gets an instant price response for a given scenario.
+         */
+        public async getInstantResponse(params: RequestType<typeof api_adapt_instant_responder_getInstantResponse>): Promise<ResponseType<typeof api_adapt_instant_responder_getInstantResponse>> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/adapt/response/instant`, {method: "POST", body: JSON.stringify(params)})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_adapt_instant_responder_getInstantResponse>
+        }
+
+        /**
+         * Gets current micro-opportunities.
+         */
+        public async getMomentOpportunities(): Promise<ResponseType<typeof api_adapt_moment_detector_getMomentOpportunities>> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/adapt/moment/opportunities`, {method: "GET", body: undefined})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_adapt_moment_detector_getMomentOpportunities>
+        }
+
+        /**
+         * Processes a real-time event from the stream.
+         */
+        public async processStreamEvent(params: RequestType<typeof api_adapt_stream_processor_processStreamEvent>): Promise<ResponseType<typeof api_adapt_stream_processor_processStreamEvent>> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/adapt/stream/process`, {method: "POST", body: JSON.stringify(params)})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_adapt_stream_processor_processStreamEvent>
+        }
+
+        /**
+         * Instantly switches the pricing strategy for an entity.
+         */
+        public async switchStrategy(params: RequestType<typeof api_adapt_strategy_switcher_switchStrategy>): Promise<ResponseType<typeof api_adapt_strategy_switcher_switchStrategy>> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/adapt/strategy/switch`, {method: "POST", body: JSON.stringify(params)})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_adapt_strategy_switcher_switchStrategy>
+        }
+    }
+}
+
+/**
+ * Import the endpoint handlers to derive the types for the client.
+ */
+import { getAnomalies as api_analytics_anomaly_detection_getAnomalies } from "~backend/analytics/anomaly_detection";
+import { getStrategyCohortPerformance as api_analytics_cohort_analysis_getStrategyCohortPerformance } from "~backend/analytics/cohort_analysis";
+import {
+    createDashboardView as api_analytics_custom_dashboards_createDashboardView,
+    deleteDashboardView as api_analytics_custom_dashboards_deleteDashboardView,
+    getDashboardViews as api_analytics_custom_dashboards_getDashboardViews,
+    updateDashboardView as api_analytics_custom_dashboards_updateDashboardView
+} from "~backend/analytics/custom_dashboards";
 import { getDashboard as api_analytics_dashboard_getDashboard } from "~backend/analytics/dashboard";
+import { getSalesForecast as api_analytics_forecasting_getSalesForecast } from "~backend/analytics/forecasting";
+import { streamRealtimeMetrics as api_analytics_realtime_streamRealtimeMetrics } from "~backend/analytics/realtime";
+import {
+    getConversionFunnel as api_analytics_visualizations_getConversionFunnel,
+    getPricingHeatmap as api_analytics_visualizations_getPricingHeatmap
+} from "~backend/analytics/visualizations";
 
 export namespace analytics {
 
@@ -119,7 +244,64 @@ export namespace analytics {
 
         constructor(baseClient: BaseClient) {
             this.baseClient = baseClient
+            this.createDashboardView = this.createDashboardView.bind(this)
+            this.deleteDashboardView = this.deleteDashboardView.bind(this)
+            this.getAnomalies = this.getAnomalies.bind(this)
+            this.getConversionFunnel = this.getConversionFunnel.bind(this)
             this.getDashboard = this.getDashboard.bind(this)
+            this.getDashboardViews = this.getDashboardViews.bind(this)
+            this.getPricingHeatmap = this.getPricingHeatmap.bind(this)
+            this.getSalesForecast = this.getSalesForecast.bind(this)
+            this.getStrategyCohortPerformance = this.getStrategyCohortPerformance.bind(this)
+            this.streamRealtimeMetrics = this.streamRealtimeMetrics.bind(this)
+            this.updateDashboardView = this.updateDashboardView.bind(this)
+        }
+
+        /**
+         * Creates a new customizable dashboard view.
+         */
+        public async createDashboardView(params: RequestType<typeof api_analytics_custom_dashboards_createDashboardView>): Promise<ResponseType<typeof api_analytics_custom_dashboards_createDashboardView>> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/analytics/dashboards/views`, {method: "POST", body: JSON.stringify(params)})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_analytics_custom_dashboards_createDashboardView>
+        }
+
+        /**
+         * Deletes a dashboard view.
+         */
+        public async deleteDashboardView(params: { viewId: string }): Promise<ResponseType<typeof api_analytics_custom_dashboards_deleteDashboardView>> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/analytics/dashboards/views/${encodeURIComponent(params.viewId)}`, {method: "DELETE", body: undefined})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_analytics_custom_dashboards_deleteDashboardView>
+        }
+
+        /**
+         * Retrieves detected price anomalies.
+         */
+        public async getAnomalies(params: RequestType<typeof api_analytics_anomaly_detection_getAnomalies>): Promise<ResponseType<typeof api_analytics_anomaly_detection_getAnomalies>> {
+            // Convert our params into the objects we need for the request
+            const query = makeRecord<string, string | string[]>({
+                status: params.status,
+            })
+
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/analytics/anomalies`, {query, method: "GET", body: undefined})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_analytics_anomaly_detection_getAnomalies>
+        }
+
+        /**
+         * Gets data for a conversion funnel visualization.
+         */
+        public async getConversionFunnel(params: RequestType<typeof api_analytics_visualizations_getConversionFunnel>): Promise<ResponseType<typeof api_analytics_visualizations_getConversionFunnel>> {
+            // Convert our params into the objects we need for the request
+            const query = makeRecord<string, string | string[]>({
+                categoryId: params.categoryId,
+                productId:  params.productId,
+            })
+
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/analytics/funnel/conversion`, {query, method: "GET", body: undefined})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_analytics_visualizations_getConversionFunnel>
         }
 
         /**
@@ -135,11 +317,311 @@ export namespace analytics {
             const resp = await this.baseClient.callTypedAPI(`/analytics/dashboard`, {query, method: "GET", body: undefined})
             return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_analytics_dashboard_getDashboard>
         }
+
+        /**
+         * Gets all saved dashboard views for the user.
+         */
+        public async getDashboardViews(): Promise<ResponseType<typeof api_analytics_custom_dashboards_getDashboardViews>> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/analytics/dashboards/views`, {method: "GET", body: undefined})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_analytics_custom_dashboards_getDashboardViews>
+        }
+
+        /**
+         * Gets data for a pricing heatmap visualization.
+         */
+        public async getPricingHeatmap(params: RequestType<typeof api_analytics_visualizations_getPricingHeatmap>): Promise<ResponseType<typeof api_analytics_visualizations_getPricingHeatmap>> {
+            // Convert our params into the objects we need for the request
+            const query = makeRecord<string, string | string[]>({
+                categoryId: params.categoryId,
+                xAxis:      String(params.xAxis),
+                yAxis:      String(params.yAxis),
+            })
+
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/analytics/heatmap/pricing`, {query, method: "GET", body: undefined})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_analytics_visualizations_getPricingHeatmap>
+        }
+
+        /**
+         * Generates a sales forecast for a specific product.
+         */
+        public async getSalesForecast(params: RequestType<typeof api_analytics_forecasting_getSalesForecast>): Promise<ResponseType<typeof api_analytics_forecasting_getSalesForecast>> {
+            // Convert our params into the objects we need for the request
+            const query = makeRecord<string, string | string[]>({
+                periodDays: params.periodDays === undefined ? undefined : String(params.periodDays),
+            })
+
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/analytics/forecast/${encodeURIComponent(params.productId)}`, {query, method: "GET", body: undefined})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_analytics_forecasting_getSalesForecast>
+        }
+
+        /**
+         * Analyzes performance of pricing strategy cohorts.
+         */
+        public async getStrategyCohortPerformance(params: RequestType<typeof api_analytics_cohort_analysis_getStrategyCohortPerformance>): Promise<ResponseType<typeof api_analytics_cohort_analysis_getStrategyCohortPerformance>> {
+            // Convert our params into the objects we need for the request
+            const query = makeRecord<string, string | string[]>({
+                cohortPeriod: params.cohortPeriod === undefined ? undefined : String(params.cohortPeriod),
+                strategyId:   params.strategyId,
+            })
+
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/analytics/cohort/performance`, {query, method: "GET", body: undefined})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_analytics_cohort_analysis_getStrategyCohortPerformance>
+        }
+
+        /**
+         * Streams real-time analytics metrics to the client.
+         * This simulates a real-time analytics pipeline using something like Flink or Spark.
+         */
+        public async streamRealtimeMetrics(): Promise<StreamIn<StreamResponse<typeof api_analytics_realtime_streamRealtimeMetrics>>> {
+            return await this.baseClient.createStreamIn(`/analytics/realtime/stream`)
+        }
+
+        /**
+         * Updates a dashboard view.
+         */
+        public async updateDashboardView(params: RequestType<typeof api_analytics_custom_dashboards_updateDashboardView>): Promise<ResponseType<typeof api_analytics_custom_dashboards_updateDashboardView>> {
+            // Construct the body with only the fields which we want encoded within the body (excluding query string or header fields)
+            const body: Record<string, any> = {
+                configuration: params.configuration,
+                isDefault:     params.isDefault,
+                name:          params.name,
+            }
+
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/analytics/dashboards/views/${encodeURIComponent(params.viewId)}`, {method: "PUT", body: JSON.stringify(body)})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_analytics_custom_dashboards_updateDashboardView>
+        }
     }
 }
 
 
 export namespace auth {
+}
+
+/**
+ * Import the endpoint handlers to derive the types for the client.
+ */
+import {
+    diagnoseIssue as api_auto_endpoints_diagnoseIssue,
+    getImprovementSuggestions as api_auto_endpoints_getImprovementSuggestions,
+    getPerformanceReport as api_auto_endpoints_getPerformanceReport,
+    getRunningExperiments as api_auto_endpoints_getRunningExperiments,
+    startOptimization as api_auto_endpoints_startOptimization
+} from "~backend/auto/endpoints";
+
+export namespace auto {
+
+    export class ServiceClient {
+        private baseClient: BaseClient
+
+        constructor(baseClient: BaseClient) {
+            this.baseClient = baseClient
+            this.diagnoseIssue = this.diagnoseIssue.bind(this)
+            this.getImprovementSuggestions = this.getImprovementSuggestions.bind(this)
+            this.getPerformanceReport = this.getPerformanceReport.bind(this)
+            this.getRunningExperiments = this.getRunningExperiments.bind(this)
+            this.startOptimization = this.startOptimization.bind(this)
+        }
+
+        /**
+         * Diagnoses a performance issue and suggests a fix.
+         */
+        public async diagnoseIssue(params: RequestType<typeof api_auto_endpoints_diagnoseIssue>): Promise<ResponseType<typeof api_auto_endpoints_diagnoseIssue>> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/auto/heal/diagnose`, {method: "POST", body: JSON.stringify(params)})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_auto_endpoints_diagnoseIssue>
+        }
+
+        /**
+         * Gets AI-generated suggestions for continuous improvement.
+         */
+        public async getImprovementSuggestions(): Promise<ResponseType<typeof api_auto_endpoints_getImprovementSuggestions>> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/auto/improve/suggest`, {method: "POST", body: undefined})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_auto_endpoints_getImprovementSuggestions>
+        }
+
+        /**
+         * Gets the latest autonomous optimization performance report.
+         */
+        public async getPerformanceReport(params: RequestType<typeof api_auto_endpoints_getPerformanceReport>): Promise<ResponseType<typeof api_auto_endpoints_getPerformanceReport>> {
+            // Convert our params into the objects we need for the request
+            const query = makeRecord<string, string | string[]>({
+                reportType: params.reportType === undefined ? undefined : String(params.reportType),
+            })
+
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/auto/performance/report`, {query, method: "GET", body: undefined})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_auto_endpoints_getPerformanceReport>
+        }
+
+        /**
+         * Gets currently running autonomous experiments.
+         */
+        public async getRunningExperiments(): Promise<ResponseType<typeof api_auto_endpoints_getRunningExperiments>> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/auto/experiments/running`, {method: "GET", body: undefined})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_auto_endpoints_getRunningExperiments>
+        }
+
+        /**
+         * Starts an autonomous optimization job.
+         */
+        public async startOptimization(params: RequestType<typeof api_auto_endpoints_startOptimization>): Promise<ResponseType<typeof api_auto_endpoints_startOptimization>> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/auto/optimize/start`, {method: "POST", body: JSON.stringify(params)})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_auto_endpoints_startOptimization>
+        }
+    }
+}
+
+/**
+ * Import the endpoint handlers to derive the types for the client.
+ */
+import { createBuyerProfile as api_behavior_buyer_profiler_createBuyerProfile } from "~backend/behavior/buyer_profiler";
+import { modelCompetitor as api_behavior_competitor_modeler_modelCompetitor } from "~backend/behavior/competitor_modeler";
+import { getMarketSentiment as api_behavior_market_psychology_getMarketSentiment } from "~backend/behavior/market_psychology";
+import { getPsychologicalStrategy as api_behavior_psychological_strategies_getPsychologicalStrategy } from "~backend/behavior/psychological_strategies";
+import { predictResponse as api_behavior_response_predictor_predictResponse } from "~backend/behavior/response_predictor";
+
+export namespace behavior {
+
+    export class ServiceClient {
+        private baseClient: BaseClient
+
+        constructor(baseClient: BaseClient) {
+            this.baseClient = baseClient
+            this.createBuyerProfile = this.createBuyerProfile.bind(this)
+            this.getMarketSentiment = this.getMarketSentiment.bind(this)
+            this.getPsychologicalStrategy = this.getPsychologicalStrategy.bind(this)
+            this.modelCompetitor = this.modelCompetitor.bind(this)
+            this.predictResponse = this.predictResponse.bind(this)
+        }
+
+        /**
+         * Creates or updates a buyer segment profile for a category.
+         */
+        public async createBuyerProfile(params: RequestType<typeof api_behavior_buyer_profiler_createBuyerProfile>): Promise<ResponseType<typeof api_behavior_buyer_profiler_createBuyerProfile>> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/behavior/buyer/profile`, {method: "POST", body: JSON.stringify(params)})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_behavior_buyer_profiler_createBuyerProfile>
+        }
+
+        /**
+         * Gets market psychology metrics for a category.
+         */
+        public async getMarketSentiment(params: RequestType<typeof api_behavior_market_psychology_getMarketSentiment>): Promise<ResponseType<typeof api_behavior_market_psychology_getMarketSentiment>> {
+            // Convert our params into the objects we need for the request
+            const query = makeRecord<string, string | string[]>({
+                categoryId: params.categoryId,
+            })
+
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/behavior/market/sentiment`, {query, method: "GET", body: undefined})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_behavior_market_psychology_getMarketSentiment>
+        }
+
+        /**
+         * Gets a psychological pricing strategy recommendation.
+         */
+        public async getPsychologicalStrategy(params: RequestType<typeof api_behavior_psychological_strategies_getPsychologicalStrategy>): Promise<ResponseType<typeof api_behavior_psychological_strategies_getPsychologicalStrategy>> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/behavior/strategy/psychological`, {method: "POST", body: JSON.stringify(params)})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_behavior_psychological_strategies_getPsychologicalStrategy>
+        }
+
+        /**
+         * Models a competitor's behavior based on historical data.
+         */
+        public async modelCompetitor(params: RequestType<typeof api_behavior_competitor_modeler_modelCompetitor>): Promise<ResponseType<typeof api_behavior_competitor_modeler_modelCompetitor>> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/behavior/competitor/model`, {method: "POST", body: JSON.stringify(params)})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_behavior_competitor_modeler_modelCompetitor>
+        }
+
+        /**
+         * Predicts market response to a proposed price change.
+         */
+        public async predictResponse(params: RequestType<typeof api_behavior_response_predictor_predictResponse>): Promise<ResponseType<typeof api_behavior_response_predictor_predictResponse>> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/behavior/predict/response`, {method: "POST", body: JSON.stringify(params)})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_behavior_response_predictor_predictResponse>
+        }
+    }
+}
+
+/**
+ * Import the endpoint handlers to derive the types for the client.
+ */
+import { decide as api_brain_decide_decide } from "~backend/brain/decide";
+import { explain as api_brain_explain_explain } from "~backend/brain/explain";
+import { getInsights as api_brain_insights_getInsights } from "~backend/brain/insights";
+import { optimizeGlobal as api_brain_optimize_optimizeGlobal } from "~backend/brain/optimize";
+import { orchestrate as api_brain_orchestrate_orchestrate } from "~backend/brain/orchestrate";
+
+export namespace brain {
+
+    export class ServiceClient {
+        private baseClient: BaseClient
+
+        constructor(baseClient: BaseClient) {
+            this.baseClient = baseClient
+            this.decide = this.decide.bind(this)
+            this.explain = this.explain.bind(this)
+            this.getInsights = this.getInsights.bind(this)
+            this.optimizeGlobal = this.optimizeGlobal.bind(this)
+            this.orchestrate = this.orchestrate.bind(this)
+        }
+
+        /**
+         * Makes a master decision by coordinating all AI services.
+         */
+        public async decide(params: RequestType<typeof api_brain_decide_decide>): Promise<ResponseType<typeof api_brain_decide_decide>> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/brain/decide`, {method: "POST", body: JSON.stringify(params)})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_brain_decide_decide>
+        }
+
+        /**
+         * Explains a master decision.
+         */
+        public async explain(params: { decisionId: string }): Promise<ResponseType<typeof api_brain_explain_explain>> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/brain/explain/${encodeURIComponent(params.decisionId)}`, {method: "GET", body: undefined})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_brain_explain_explain>
+        }
+
+        /**
+         * Gets system-wide insights by synthesizing data from multiple services.
+         */
+        public async getInsights(): Promise<ResponseType<typeof api_brain_insights_getInsights>> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/brain/insights`, {method: "GET", body: undefined})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_brain_insights_getInsights>
+        }
+
+        /**
+         * Runs a global optimization across all products and strategies.
+         */
+        public async optimizeGlobal(params: RequestType<typeof api_brain_optimize_optimizeGlobal>): Promise<ResponseType<typeof api_brain_optimize_optimizeGlobal>> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/brain/optimize/global`, {method: "POST", body: JSON.stringify(params)})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_brain_optimize_optimizeGlobal>
+        }
+
+        /**
+         * Runs a complex, system-wide workflow.
+         */
+        public async orchestrate(params: RequestType<typeof api_brain_orchestrate_orchestrate>): Promise<ResponseType<typeof api_brain_orchestrate_orchestrate>> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/brain/orchestrate`, {method: "POST", body: JSON.stringify(params)})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_brain_orchestrate_orchestrate>
+        }
+    }
 }
 
 /**
@@ -195,67 +677,69 @@ export namespace cache {
 /**
  * Import the endpoint handlers to derive the types for the client.
  */
-import { listItems as api_ebay_list_items_listItems } from "~backend/ebay/list_items";
-import {
-    getAuthUrl as api_ebay_oauth_getAuthUrl,
-    handleCallback as api_ebay_oauth_handleCallback
-} from "~backend/ebay/oauth";
-import { syncListings as api_ebay_sync_listings_syncListings } from "~backend/ebay/sync_listings";
+import { explain as api_composer_explain_explain } from "~backend/composer/explain";
+import { generate as api_composer_generate_generate } from "~backend/composer/generate";
+import { optimize as api_composer_optimize_optimize } from "~backend/composer/optimize";
+import { parse as api_composer_parse_parse } from "~backend/composer/parse";
+import { simulate as api_composer_simulate_simulate } from "~backend/composer/simulate";
 
-export namespace ebay {
+export namespace composer {
 
     export class ServiceClient {
         private baseClient: BaseClient
 
         constructor(baseClient: BaseClient) {
             this.baseClient = baseClient
-            this.getAuthUrl = this.getAuthUrl.bind(this)
-            this.handleCallback = this.handleCallback.bind(this)
-            this.listItems = this.listItems.bind(this)
-            this.syncListings = this.syncListings.bind(this)
+            this.explain = this.explain.bind(this)
+            this.generate = this.generate.bind(this)
+            this.optimize = this.optimize.bind(this)
+            this.parse = this.parse.bind(this)
+            this.simulate = this.simulate.bind(this)
         }
 
         /**
-         * Generates eBay OAuth authorization URL.
+         * Explains a composed strategy in plain English.
          */
-        public async getAuthUrl(): Promise<ResponseType<typeof api_ebay_oauth_getAuthUrl>> {
+        public async explain(params: { strategyId: string }): Promise<ResponseType<typeof api_composer_explain_explain>> {
             // Now make the actual call to the API
-            const resp = await this.baseClient.callTypedAPI(`/ebay/auth/url`, {method: "GET", body: undefined})
-            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_ebay_oauth_getAuthUrl>
+            const resp = await this.baseClient.callTypedAPI(`/composer/explain/${encodeURIComponent(params.strategyId)}`, {method: "GET", body: undefined})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_composer_explain_explain>
         }
 
         /**
-         * Handles eBay OAuth callback and exchanges code for tokens.
+         * Generates executable strategy code from a parsed strategy.
          */
-        public async handleCallback(params: RequestType<typeof api_ebay_oauth_handleCallback>): Promise<ResponseType<typeof api_ebay_oauth_handleCallback>> {
+        public async generate(params: RequestType<typeof api_composer_generate_generate>): Promise<ResponseType<typeof api_composer_generate_generate>> {
             // Now make the actual call to the API
-            const resp = await this.baseClient.callTypedAPI(`/ebay/auth/callback`, {method: "POST", body: JSON.stringify(params)})
-            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_ebay_oauth_handleCallback>
+            const resp = await this.baseClient.callTypedAPI(`/composer/generate`, {method: "POST", body: JSON.stringify(params)})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_composer_generate_generate>
         }
 
         /**
-         * Retrieves user's eBay listings with pagination.
+         * Uses AI to optimize a composed strategy.
          */
-        public async listItems(params: RequestType<typeof api_ebay_list_items_listItems>): Promise<ResponseType<typeof api_ebay_list_items_listItems>> {
-            // Convert our params into the objects we need for the request
-            const query = makeRecord<string, string | string[]>({
-                limit:  params.limit === undefined ? undefined : String(params.limit),
-                page:   params.page === undefined ? undefined : String(params.page),
-                status: params.status,
-            })
-
+        public async optimize(params: RequestType<typeof api_composer_optimize_optimize>): Promise<ResponseType<typeof api_composer_optimize_optimize>> {
             // Now make the actual call to the API
-            const resp = await this.baseClient.callTypedAPI(`/ebay/listings`, {query, method: "GET", body: undefined})
-            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_ebay_list_items_listItems>
+            const resp = await this.baseClient.callTypedAPI(`/composer/optimize`, {method: "POST", body: JSON.stringify(params)})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_composer_optimize_optimize>
         }
 
         /**
-         * Syncs user's eBay listings from eBay API.
+         * Parses a natural language strategy description into a structured format.
          */
-        public async syncListings(): Promise<ResponseType<typeof api_ebay_sync_listings_syncListings>> {
+        public async parse(params: RequestType<typeof api_composer_parse_parse>): Promise<ResponseType<typeof api_composer_parse_parse>> {
             // Now make the actual call to the API
-            const resp = await this.baseClient.callTypedAPI(`/ebay/sync`, {method: "POST", body: undefined})
-            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_ebay_sync_listings_syncListings>
+            const resp = await this.baseClient.callTypedAPI(`/composer/parse`, {method: "POST", body: JSON.stringify(params)})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_composer_parse_parse>
+        }
+
+        /**
+         * Simulates the performance of a composed strategy.
+         */
+        public async simulate(params: RequestType<typeof api_composer_simulate_simulate>): Promise<ResponseType<typeof api_composer_simulate_simulate>> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/composer/simulate`, {method: "POST", body: JSON.stringify(params)})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_composer_simulate_simulate>
         }
     }
 }
@@ -263,7 +747,469 @@ export namespace ebay {
 /**
  * Import the endpoint handlers to derive the types for the client.
  */
-import { submitFeedback as api_learning_feedback_processor_submitFeedback } from "~backend/learning/feedback_processor";
+import { chat as api_copilot_chat_chat } from "~backend/copilot/chat";
+import { execute as api_copilot_execute_execute } from "~backend/copilot/execute";
+import {
+    getSuggestions as api_copilot_suggestions_getSuggestions,
+    updateSuggestionStatus as api_copilot_suggestions_updateSuggestionStatus
+} from "~backend/copilot/suggestions";
+
+export namespace copilot {
+
+    export class ServiceClient {
+        private baseClient: BaseClient
+
+        constructor(baseClient: BaseClient) {
+            this.baseClient = baseClient
+            this.chat = this.chat.bind(this)
+            this.execute = this.execute.bind(this)
+            this.getSuggestions = this.getSuggestions.bind(this)
+            this.updateSuggestionStatus = this.updateSuggestionStatus.bind(this)
+        }
+
+        /**
+         * Handles chat interactions with the AI Copilot.
+         */
+        public async chat(params: RequestType<typeof api_copilot_chat_chat>): Promise<ResponseType<typeof api_copilot_chat_chat>> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/copilot/chat`, {method: "POST", body: JSON.stringify(params)})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_copilot_chat_chat>
+        }
+
+        /**
+         * Executes a command generated by the AI Copilot.
+         */
+        public async execute(params: RequestType<typeof api_copilot_execute_execute>): Promise<ResponseType<typeof api_copilot_execute_execute>> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/copilot/execute`, {method: "POST", body: JSON.stringify(params)})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_copilot_execute_execute>
+        }
+
+        /**
+         * Gets proactive suggestions for the user.
+         */
+        public async getSuggestions(params: RequestType<typeof api_copilot_suggestions_getSuggestions>): Promise<ResponseType<typeof api_copilot_suggestions_getSuggestions>> {
+            // Convert our params into the objects we need for the request
+            const query = makeRecord<string, string | string[]>({
+                limit: params.limit === undefined ? undefined : String(params.limit),
+            })
+
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/copilot/suggestions`, {query, method: "GET", body: undefined})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_copilot_suggestions_getSuggestions>
+        }
+
+        /**
+         * Updates the status of a suggestion.
+         */
+        public async updateSuggestionStatus(params: RequestType<typeof api_copilot_suggestions_updateSuggestionStatus>): Promise<ResponseType<typeof api_copilot_suggestions_updateSuggestionStatus>> {
+            // Construct the body with only the fields which we want encoded within the body (excluding query string or header fields)
+            const body: Record<string, any> = {
+                status: params.status,
+            }
+
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/copilot/suggestions/${encodeURIComponent(params.suggestionId)}/status`, {method: "POST", body: JSON.stringify(body)})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_copilot_suggestions_updateSuggestionStatus>
+        }
+    }
+}
+
+/**
+ * Import the endpoint handlers to derive the types for the client.
+ */
+import {
+    exportCsv as api_documents_csv_handler_exportCsv,
+    importCsv as api_documents_csv_handler_importCsv
+} from "~backend/documents/csv_handler";
+import { uploadInvoice as api_documents_invoice_processor_uploadInvoice } from "~backend/documents/invoice_processor";
+import { extract as api_documents_ocr_extract } from "~backend/documents/ocr";
+import {
+    createTemplate as api_documents_templates_createTemplate,
+    getTemplates as api_documents_templates_getTemplates
+} from "~backend/documents/templates";
+
+export namespace documents {
+
+    export class ServiceClient {
+        private baseClient: BaseClient
+
+        constructor(baseClient: BaseClient) {
+            this.baseClient = baseClient
+            this.createTemplate = this.createTemplate.bind(this)
+            this.exportCsv = this.exportCsv.bind(this)
+            this.extract = this.extract.bind(this)
+            this.getTemplates = this.getTemplates.bind(this)
+            this.importCsv = this.importCsv.bind(this)
+            this.uploadInvoice = this.uploadInvoice.bind(this)
+        }
+
+        /**
+         * Creates a new extraction template.
+         */
+        public async createTemplate(params: RequestType<typeof api_documents_templates_createTemplate>): Promise<ResponseType<typeof api_documents_templates_createTemplate>> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/documents/templates`, {method: "POST", body: JSON.stringify(params)})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_documents_templates_createTemplate>
+        }
+
+        /**
+         * Exports data to a CSV file.
+         */
+        public async exportCsv(params: RequestType<typeof api_documents_csv_handler_exportCsv>): Promise<ResponseType<typeof api_documents_csv_handler_exportCsv>> {
+            // Convert our params into the objects we need for the request
+            const query = makeRecord<string, string | string[]>({
+                exportType: String(params.exportType),
+                filters:    params.filters === undefined ? undefined : String(params.filters),
+            })
+
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/documents/csv/export`, {query, method: "GET", body: undefined})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_documents_csv_handler_exportCsv>
+        }
+
+        /**
+         * Extracts structured data from a document using OCR.
+         */
+        public async extract(params: RequestType<typeof api_documents_ocr_extract>): Promise<ResponseType<typeof api_documents_ocr_extract>> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/documents/extract`, {method: "POST", body: JSON.stringify(params)})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_documents_ocr_extract>
+        }
+
+        /**
+         * Gets all extraction templates for the user.
+         */
+        public async getTemplates(): Promise<ResponseType<typeof api_documents_templates_getTemplates>> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/documents/templates`, {method: "GET", body: undefined})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_documents_templates_getTemplates>
+        }
+
+        /**
+         * Imports data from a CSV file.
+         */
+        public async importCsv(params: RequestType<typeof api_documents_csv_handler_importCsv>): Promise<ResponseType<typeof api_documents_csv_handler_importCsv>> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/documents/csv/import`, {method: "POST", body: JSON.stringify(params)})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_documents_csv_handler_importCsv>
+        }
+
+        /**
+         * Uploads a PDF invoice for processing.
+         */
+        public async uploadInvoice(params: RequestType<typeof api_documents_invoice_processor_uploadInvoice>): Promise<ResponseType<typeof api_documents_invoice_processor_uploadInvoice>> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/documents/invoice/upload`, {method: "POST", body: JSON.stringify(params)})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_documents_invoice_processor_uploadInvoice>
+        }
+    }
+}
+
+/**
+ * Import the endpoint handlers to derive the types for the client.
+ */
+import {
+    getCategoryInsights as api_graph_competitor_network_getCategoryInsights,
+    getCompetitorNetwork as api_graph_competitor_network_getCompetitorNetwork
+} from "~backend/graph/competitor_network";
+import {
+    analyzeInfluence as api_graph_graph_algorithms_analyzeInfluence,
+    optimizePrice as api_graph_graph_algorithms_optimizePrice,
+    simulateMarket as api_graph_graph_algorithms_simulateMarket
+} from "~backend/graph/graph_algorithms";
+import {
+    createNode as api_graph_graph_manager_createNode,
+    createRelationship as api_graph_graph_manager_createRelationship,
+    syncProduct as api_graph_graph_manager_syncProduct
+} from "~backend/graph/graph_manager";
+import {
+    analyzePatterns as api_graph_pattern_analyzer_analyzePatterns,
+    findSuccessPath as api_graph_pattern_analyzer_findSuccessPath
+} from "~backend/graph/pattern_analyzer";
+
+export namespace graph {
+
+    export class ServiceClient {
+        private baseClient: BaseClient
+
+        constructor(baseClient: BaseClient) {
+            this.baseClient = baseClient
+            this.analyzeInfluence = this.analyzeInfluence.bind(this)
+            this.analyzePatterns = this.analyzePatterns.bind(this)
+            this.createNode = this.createNode.bind(this)
+            this.createRelationship = this.createRelationship.bind(this)
+            this.findSuccessPath = this.findSuccessPath.bind(this)
+            this.getCategoryInsights = this.getCategoryInsights.bind(this)
+            this.getCompetitorNetwork = this.getCompetitorNetwork.bind(this)
+            this.optimizePrice = this.optimizePrice.bind(this)
+            this.simulateMarket = this.simulateMarket.bind(this)
+            this.syncProduct = this.syncProduct.bind(this)
+        }
+
+        /**
+         * Analyzes product influence in the market network.
+         */
+        public async analyzeInfluence(params: RequestType<typeof api_graph_graph_algorithms_analyzeInfluence>): Promise<ResponseType<typeof api_graph_graph_algorithms_analyzeInfluence>> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/graph/analyze/influence`, {method: "POST", body: JSON.stringify(params)})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_graph_graph_algorithms_analyzeInfluence>
+        }
+
+        /**
+         * Analyzes pricing patterns in the graph database.
+         */
+        public async analyzePatterns(params: RequestType<typeof api_graph_pattern_analyzer_analyzePatterns>): Promise<ResponseType<typeof api_graph_pattern_analyzer_analyzePatterns>> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/graph/pattern/analyze`, {method: "POST", body: JSON.stringify(params)})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_graph_pattern_analyzer_analyzePatterns>
+        }
+
+        /**
+         * Creates a new node in the graph database.
+         */
+        public async createNode(params: RequestType<typeof api_graph_graph_manager_createNode>): Promise<ResponseType<typeof api_graph_graph_manager_createNode>> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/graph/nodes`, {method: "POST", body: JSON.stringify(params)})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_graph_graph_manager_createNode>
+        }
+
+        /**
+         * Creates a relationship between two nodes.
+         */
+        public async createRelationship(params: RequestType<typeof api_graph_graph_manager_createRelationship>): Promise<ResponseType<typeof api_graph_graph_manager_createRelationship>> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/graph/relationships`, {method: "POST", body: JSON.stringify(params)})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_graph_graph_manager_createRelationship>
+        }
+
+        /**
+         * Finds successful pricing paths for similar products.
+         */
+        public async findSuccessPath(params: RequestType<typeof api_graph_pattern_analyzer_findSuccessPath>): Promise<ResponseType<typeof api_graph_pattern_analyzer_findSuccessPath>> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/graph/success-path`, {method: "POST", body: JSON.stringify(params)})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_graph_pattern_analyzer_findSuccessPath>
+        }
+
+        /**
+         * Gets category-level insights and analytics.
+         */
+        public async getCategoryInsights(params: RequestType<typeof api_graph_competitor_network_getCategoryInsights>): Promise<ResponseType<typeof api_graph_competitor_network_getCategoryInsights>> {
+            // Convert our params into the objects we need for the request
+            const query = makeRecord<string, string | string[]>({
+                includeSubcategories: params.includeSubcategories === undefined ? undefined : String(params.includeSubcategories),
+                timeRange:            params.timeRange === undefined ? undefined : String(params.timeRange),
+            })
+
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/graph/insights/${encodeURIComponent(params.categoryId)}`, {query, method: "GET", body: undefined})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_graph_competitor_network_getCategoryInsights>
+        }
+
+        /**
+         * Gets the competitor network for a specific product.
+         */
+        public async getCompetitorNetwork(params: RequestType<typeof api_graph_competitor_network_getCompetitorNetwork>): Promise<ResponseType<typeof api_graph_competitor_network_getCompetitorNetwork>> {
+            // Convert our params into the objects we need for the request
+            const query = makeRecord<string, string | string[]>({
+                depth:          params.depth === undefined ? undefined : String(params.depth),
+                includeMetrics: params.includeMetrics === undefined ? undefined : String(params.includeMetrics),
+            })
+
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/graph/competitors/${encodeURIComponent(params.productId)}`, {query, method: "GET", body: undefined})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_graph_competitor_network_getCompetitorNetwork>
+        }
+
+        /**
+         * Optimizes product pricing using graph algorithms and market analysis.
+         */
+        public async optimizePrice(params: RequestType<typeof api_graph_graph_algorithms_optimizePrice>): Promise<ResponseType<typeof api_graph_graph_algorithms_optimizePrice>> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/graph/optimize/price`, {method: "POST", body: JSON.stringify(params)})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_graph_graph_algorithms_optimizePrice>
+        }
+
+        /**
+         * Simulates market dynamics with price changes.
+         */
+        public async simulateMarket(params: RequestType<typeof api_graph_graph_algorithms_simulateMarket>): Promise<ResponseType<typeof api_graph_graph_algorithms_simulateMarket>> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/graph/simulate/market`, {method: "POST", body: JSON.stringify(params)})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_graph_graph_algorithms_simulateMarket>
+        }
+
+        /**
+         * Syncs a product listing to the graph database.
+         */
+        public async syncProduct(params: RequestType<typeof api_graph_graph_manager_syncProduct>): Promise<ResponseType<typeof api_graph_graph_manager_syncProduct>> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/graph/sync/product`, {method: "POST", body: JSON.stringify(params)})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_graph_graph_manager_syncProduct>
+        }
+    }
+}
+
+/**
+ * Import the endpoint handlers to derive the types for the client.
+ */
+import {
+    analyzeWarRoom as api_intel_competitive_intel_analyzeWarRoom,
+    getShadowInventory as api_intel_competitive_intel_getShadowInventory
+} from "~backend/intel/competitive_intel";
+import { forecastDemand as api_intel_demand_forecaster_forecastDemand } from "~backend/intel/demand_forecaster";
+import { integrateExternalSignals as api_intel_external_signals_integrateExternalSignals } from "~backend/intel/external_signals";
+import { findArbitrageOpportunities as api_intel_opportunity_finder_findArbitrageOpportunities } from "~backend/intel/opportunity_finder";
+
+export namespace intel {
+
+    export class ServiceClient {
+        private baseClient: BaseClient
+
+        constructor(baseClient: BaseClient) {
+            this.baseClient = baseClient
+            this.analyzeWarRoom = this.analyzeWarRoom.bind(this)
+            this.findArbitrageOpportunities = this.findArbitrageOpportunities.bind(this)
+            this.forecastDemand = this.forecastDemand.bind(this)
+            this.getShadowInventory = this.getShadowInventory.bind(this)
+            this.integrateExternalSignals = this.integrateExternalSignals.bind(this)
+        }
+
+        /**
+         * Provides a competitive situation analysis (war room).
+         */
+        public async analyzeWarRoom(params: RequestType<typeof api_intel_competitive_intel_analyzeWarRoom>): Promise<ResponseType<typeof api_intel_competitive_intel_analyzeWarRoom>> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/intel/war-room/analyze`, {method: "POST", body: JSON.stringify(params)})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_intel_competitive_intel_analyzeWarRoom>
+        }
+
+        /**
+         * Finds pricing arbitrage opportunities across different marketplaces.
+         */
+        public async findArbitrageOpportunities(): Promise<ResponseType<typeof api_intel_opportunity_finder_findArbitrageOpportunities>> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/intel/opportunities/arbitrage`, {method: "GET", body: undefined})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_intel_opportunity_finder_findArbitrageOpportunities>
+        }
+
+        /**
+         * Provides a multi-horizon demand forecast for a product.
+         */
+        public async forecastDemand(params: RequestType<typeof api_intel_demand_forecaster_forecastDemand>): Promise<ResponseType<typeof api_intel_demand_forecaster_forecastDemand>> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/intel/forecast/demand`, {method: "POST", body: JSON.stringify(params)})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_intel_demand_forecaster_forecastDemand>
+        }
+
+        /**
+         * Tracks competitor's shadow inventory.
+         */
+        public async getShadowInventory(params: RequestType<typeof api_intel_competitive_intel_getShadowInventory>): Promise<ResponseType<typeof api_intel_competitive_intel_getShadowInventory>> {
+            // Convert our params into the objects we need for the request
+            const query = makeRecord<string, string | string[]>({
+                competitorId: params.competitorId,
+                listingId:    params.listingId,
+            })
+
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/intel/competitors/shadow-inventory`, {query, method: "GET", body: undefined})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_intel_competitive_intel_getShadowInventory>
+        }
+
+        /**
+         * Integrates external signals for market analysis.
+         */
+        public async integrateExternalSignals(params: RequestType<typeof api_intel_external_signals_integrateExternalSignals>): Promise<ResponseType<typeof api_intel_external_signals_integrateExternalSignals>> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/intel/signals/external`, {method: "POST", body: JSON.stringify(params)})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_intel_external_signals_integrateExternalSignals>
+        }
+    }
+}
+
+/**
+ * Import the endpoint handlers to derive the types for the client.
+ */
+import {
+    cancelJob as api_jobs_endpoints_cancelJob,
+    getJobHistory as api_jobs_endpoints_getJobHistory,
+    getJobStatus as api_jobs_endpoints_getJobStatus
+} from "~backend/jobs/endpoints";
+
+export namespace jobs {
+
+    export class ServiceClient {
+        private baseClient: BaseClient
+
+        constructor(baseClient: BaseClient) {
+            this.baseClient = baseClient
+            this.cancelJob = this.cancelJob.bind(this)
+            this.getJobHistory = this.getJobHistory.bind(this)
+            this.getJobStatus = this.getJobStatus.bind(this)
+        }
+
+        /**
+         * Cancels a pending job.
+         */
+        public async cancelJob(params: { jobId: string }): Promise<ResponseType<typeof api_jobs_endpoints_cancelJob>> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/jobs/cancel/${encodeURIComponent(params.jobId)}`, {method: "POST", body: undefined})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_jobs_endpoints_cancelJob>
+        }
+
+        /**
+         * Gets job history for the user.
+         */
+        public async getJobHistory(params: RequestType<typeof api_jobs_endpoints_getJobHistory>): Promise<ResponseType<typeof api_jobs_endpoints_getJobHistory>> {
+            // Convert our params into the objects we need for the request
+            const query = makeRecord<string, string | string[]>({
+                limit:  params.limit === undefined ? undefined : String(params.limit),
+                offset: params.offset === undefined ? undefined : String(params.offset),
+            })
+
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/jobs/history`, {query, method: "GET", body: undefined})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_jobs_endpoints_getJobHistory>
+        }
+
+        /**
+         * Gets the status of a specific job.
+         */
+        public async getJobStatus(params: { jobId: string }): Promise<ResponseType<typeof api_jobs_endpoints_getJobStatus>> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/jobs/status/${encodeURIComponent(params.jobId)}`, {method: "GET", body: undefined})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_jobs_endpoints_getJobStatus>
+        }
+    }
+}
+
+/**
+ * Import the endpoint handlers to derive the types for the client.
+ */
+import { autoRunExperiment as api_learning_autonomous_experimenter_autoRunExperiment } from "~backend/learning/autonomous_experimenter";
+import { getCausalInsights as api_learning_causal_inference_getCausalInsights } from "~backend/learning/causal_inference";
+import {
+    createExperiment as api_learning_experiment_manager_createExperiment,
+    getExperimentStatus as api_learning_experiment_manager_getExperimentStatus,
+    listExperiments as api_learning_experiment_manager_listExperiments,
+    startExperiment as api_learning_experiment_manager_startExperiment
+} from "~backend/learning/experiment_manager";
+import {
+    recordFeedback as api_learning_feedback_processor_recordFeedback,
+    submitFeedback as api_learning_feedback_processor_submitFeedback
+} from "~backend/learning/feedback_processor";
+import { generateHypothesis as api_learning_hypothesis_generator_generateHypothesis } from "~backend/learning/hypothesis_generator";
+import { adaptModel as api_learning_meta_learning_adaptModel } from "~backend/learning/meta_learning";
+import { getModelConfidenceScores as api_learning_model_confidence_getModelConfidenceScores } from "~backend/learning/model_confidence";
+import { detectPatterns as api_learning_pattern_detector_detectPatterns } from "~backend/learning/pattern_detector";
+import {
+    getRLAction as api_learning_reinforcement_learning_getRLAction,
+    recordRLReward as api_learning_reinforcement_learning_recordRLReward,
+    trainRLModel as api_learning_reinforcement_learning_trainRLModel
+} from "~backend/learning/reinforcement_learning";
+import { getRecommendedStrategy as api_learning_strategy_recommender_getRecommendedStrategy } from "~backend/learning/strategy_recommender";
 
 export namespace learning {
 
@@ -272,7 +1218,168 @@ export namespace learning {
 
         constructor(baseClient: BaseClient) {
             this.baseClient = baseClient
+            this.adaptModel = this.adaptModel.bind(this)
+            this.autoRunExperiment = this.autoRunExperiment.bind(this)
+            this.createExperiment = this.createExperiment.bind(this)
+            this.detectPatterns = this.detectPatterns.bind(this)
+            this.generateHypothesis = this.generateHypothesis.bind(this)
+            this.getCausalInsights = this.getCausalInsights.bind(this)
+            this.getExperimentStatus = this.getExperimentStatus.bind(this)
+            this.getModelConfidenceScores = this.getModelConfidenceScores.bind(this)
+            this.getRLAction = this.getRLAction.bind(this)
+            this.getRecommendedStrategy = this.getRecommendedStrategy.bind(this)
+            this.listExperiments = this.listExperiments.bind(this)
+            this.recordFeedback = this.recordFeedback.bind(this)
+            this.recordRLReward = this.recordRLReward.bind(this)
+            this.startExperiment = this.startExperiment.bind(this)
             this.submitFeedback = this.submitFeedback.bind(this)
+            this.trainRLModel = this.trainRLModel.bind(this)
+        }
+
+        /**
+         * Adapts a model to new market conditions using meta-learning.
+         */
+        public async adaptModel(params: RequestType<typeof api_learning_meta_learning_adaptModel>): Promise<ResponseType<typeof api_learning_meta_learning_adaptModel>> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/learning/meta/adapt`, {method: "POST", body: JSON.stringify(params)})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_learning_meta_learning_adaptModel>
+        }
+
+        /**
+         * Runs an autonomous experiment based on a generated hypothesis.
+         */
+        public async autoRunExperiment(params: RequestType<typeof api_learning_autonomous_experimenter_autoRunExperiment>): Promise<ResponseType<typeof api_learning_autonomous_experimenter_autoRunExperiment>> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/learning/experiment/auto-run`, {method: "POST", body: JSON.stringify(params)})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_learning_autonomous_experimenter_autoRunExperiment>
+        }
+
+        /**
+         * Creates a new pricing experiment with A/B testing or multi-armed bandit approach.
+         */
+        public async createExperiment(params: RequestType<typeof api_learning_experiment_manager_createExperiment>): Promise<ResponseType<typeof api_learning_experiment_manager_createExperiment>> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/learning/experiment/create`, {method: "POST", body: JSON.stringify(params)})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_learning_experiment_manager_createExperiment>
+        }
+
+        /**
+         * Detects new market patterns using machine learning and statistical analysis.
+         */
+        public async detectPatterns(params: RequestType<typeof api_learning_pattern_detector_detectPatterns>): Promise<ResponseType<typeof api_learning_pattern_detector_detectPatterns>> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/learning/pattern/detect`, {method: "POST", body: JSON.stringify(params)})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_learning_pattern_detector_detectPatterns>
+        }
+
+        /**
+         * Auto-generates testing hypotheses using Gemini AI.
+         */
+        public async generateHypothesis(params: RequestType<typeof api_learning_hypothesis_generator_generateHypothesis>): Promise<ResponseType<typeof api_learning_hypothesis_generator_generateHypothesis>> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/learning/hypothesis/generate`, {method: "POST", body: JSON.stringify(params)})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_learning_hypothesis_generator_generateHypothesis>
+        }
+
+        /**
+         * Gets causal insights for a product.
+         * NOTE: This is a simplified implementation using correlation as a proxy for causation.
+         * True causal inference requires more advanced methods like instrumental variables or structural equation modeling.
+         */
+        public async getCausalInsights(params: RequestType<typeof api_learning_causal_inference_getCausalInsights>): Promise<ResponseType<typeof api_learning_causal_inference_getCausalInsights>> {
+            // Convert our params into the objects we need for the request
+            const query = makeRecord<string, string | string[]>({
+                factors:   params.factors.map((v) => v),
+                listingId: params.listingId,
+                outcome:   params.outcome,
+            })
+
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/learning/insights/causal`, {query, method: "GET", body: undefined})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_learning_causal_inference_getCausalInsights>
+        }
+
+        /**
+         * Gets experiment status and results.
+         */
+        public async getExperimentStatus(params: { experimentId: string }): Promise<ResponseType<typeof api_learning_experiment_manager_getExperimentStatus>> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/learning/experiment/${encodeURIComponent(params.experimentId)}/status`, {method: "GET", body: undefined})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_learning_experiment_manager_getExperimentStatus>
+        }
+
+        /**
+         * Gets confidence scores for various learning models.
+         */
+        public async getModelConfidenceScores(): Promise<ResponseType<typeof api_learning_model_confidence_getModelConfidenceScores>> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/learning/confidence/scores`, {method: "GET", body: undefined})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_learning_model_confidence_getModelConfidenceScores>
+        }
+
+        /**
+         * Gets optimal action from trained RL model.
+         */
+        public async getRLAction(params: RequestType<typeof api_learning_reinforcement_learning_getRLAction>): Promise<ResponseType<typeof api_learning_reinforcement_learning_getRLAction>> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/learning/rl/action`, {method: "POST", body: JSON.stringify(params)})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_learning_reinforcement_learning_getRLAction>
+        }
+
+        /**
+         * Gets AI-recommended pricing strategy based on learning and market analysis.
+         */
+        public async getRecommendedStrategy(params: RequestType<typeof api_learning_strategy_recommender_getRecommendedStrategy>): Promise<ResponseType<typeof api_learning_strategy_recommender_getRecommendedStrategy>> {
+            // Convert our params into the objects we need for the request
+            const query = makeRecord<string, string | string[]>({
+                brandId:       params.brandId,
+                categoryId:    params.categoryId,
+                currentPrice:  params.currentPrice === undefined ? undefined : String(params.currentPrice),
+                listingId:     params.listingId,
+                riskTolerance: params.riskTolerance === undefined ? undefined : String(params.riskTolerance),
+                targetMetric:  params.targetMetric === undefined ? undefined : String(params.targetMetric),
+                timeHorizon:   params.timeHorizon === undefined ? undefined : String(params.timeHorizon),
+            })
+
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/learning/strategy/recommend`, {query, method: "GET", body: undefined})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_learning_strategy_recommender_getRecommendedStrategy>
+        }
+
+        /**
+         * Lists all experiments for the user.
+         */
+        public async listExperiments(): Promise<ResponseType<typeof api_learning_experiment_manager_listExperiments>> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/learning/experiments`, {method: "GET", body: undefined})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_learning_experiment_manager_listExperiments>
+        }
+
+        /**
+         * Records detailed outcome feedback for a pricing decision.
+         */
+        public async recordFeedback(params: RequestType<typeof api_learning_feedback_processor_recordFeedback>): Promise<ResponseType<typeof api_learning_feedback_processor_recordFeedback>> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/learning/feedback/record`, {method: "POST", body: JSON.stringify(params)})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_learning_feedback_processor_recordFeedback>
+        }
+
+        /**
+         * Records reward for RL learning.
+         */
+        public async recordRLReward(params: RequestType<typeof api_learning_reinforcement_learning_recordRLReward>): Promise<ResponseType<typeof api_learning_reinforcement_learning_recordRLReward>> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/learning/rl/reward`, {method: "POST", body: JSON.stringify(params)})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_learning_reinforcement_learning_recordRLReward>
+        }
+
+        /**
+         * Starts a pricing experiment.
+         */
+        public async startExperiment(params: { experimentId: string }): Promise<ResponseType<typeof api_learning_experiment_manager_startExperiment>> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/learning/experiment/${encodeURIComponent(params.experimentId)}/start`, {method: "POST", body: undefined})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_learning_experiment_manager_startExperiment>
         }
 
         /**
@@ -283,13 +1390,181 @@ export namespace learning {
             const resp = await this.baseClient.callTypedAPI(`/learning/feedback`, {method: "POST", body: JSON.stringify(params)})
             return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_learning_feedback_processor_submitFeedback>
         }
+
+        /**
+         * Trains reinforcement learning model for pricing optimization.
+         */
+        public async trainRLModel(params: RequestType<typeof api_learning_reinforcement_learning_trainRLModel>): Promise<ResponseType<typeof api_learning_reinforcement_learning_trainRLModel>> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/learning/rl/train`, {method: "POST", body: JSON.stringify(params)})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_learning_reinforcement_learning_trainRLModel>
+        }
     }
 }
 
 /**
  * Import the endpoint handlers to derive the types for the client.
  */
-import { findSimilar as api_ml_vector_store_findSimilar } from "~backend/ml/vector_store";
+import { list as api_listings_api_list } from "~backend/listings/api";
+import { updateInventory as api_listings_inventory_updateInventory } from "~backend/listings/inventory";
+
+export namespace listings {
+
+    export class ServiceClient {
+        private baseClient: BaseClient
+
+        constructor(baseClient: BaseClient) {
+            this.baseClient = baseClient
+            this.list = this.list.bind(this)
+            this.updateInventory = this.updateInventory.bind(this)
+        }
+
+        /**
+         * Retrieves user's unified listings with pagination.
+         */
+        public async list(params: RequestType<typeof api_listings_api_list>): Promise<ResponseType<typeof api_listings_api_list>> {
+            // Convert our params into the objects we need for the request
+            const query = makeRecord<string, string | string[]>({
+                limit:       params.limit === undefined ? undefined : String(params.limit),
+                marketplace: params.marketplace,
+                page:        params.page === undefined ? undefined : String(params.page),
+                status:      params.status,
+            })
+
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/listings`, {query, method: "GET", body: undefined})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_listings_api_list>
+        }
+
+        /**
+         * Updates inventory for a product.
+         */
+        public async updateInventory(params: RequestType<typeof api_listings_inventory_updateInventory>): Promise<ResponseType<typeof api_listings_inventory_updateInventory>> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/inventory/update`, {method: "POST", body: JSON.stringify(params)})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_listings_inventory_updateInventory>
+        }
+    }
+}
+
+/**
+ * Import the endpoint handlers to derive the types for the client.
+ */
+import { createAlert as api_market_alerts_createAlert } from "~backend/market/alerts";
+import { trackCompetitor as api_market_competitors_trackCompetitor } from "~backend/market/competitors";
+import { getDemand as api_market_demand_getDemand } from "~backend/market/demand";
+import { getOpportunities as api_market_opportunities_getOpportunities } from "~backend/market/opportunities";
+import { getTrends as api_market_trends_getTrends } from "~backend/market/trends";
+
+export namespace market {
+
+    export class ServiceClient {
+        private baseClient: BaseClient
+
+        constructor(baseClient: BaseClient) {
+            this.baseClient = baseClient
+            this.createAlert = this.createAlert.bind(this)
+            this.getDemand = this.getDemand.bind(this)
+            this.getOpportunities = this.getOpportunities.bind(this)
+            this.getTrends = this.getTrends.bind(this)
+            this.trackCompetitor = this.trackCompetitor.bind(this)
+        }
+
+        /**
+         * Creates a new market alert rule.
+         */
+        public async createAlert(params: RequestType<typeof api_market_alerts_createAlert>): Promise<ResponseType<typeof api_market_alerts_createAlert>> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/market/alerts/create`, {method: "POST", body: JSON.stringify(params)})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_market_alerts_createAlert>
+        }
+
+        /**
+         * Gets demand signals for a specific product.
+         */
+        public async getDemand(params: { productId: string }): Promise<ResponseType<typeof api_market_demand_getDemand>> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/market/demand/${encodeURIComponent(params.productId)}`, {method: "GET", body: undefined})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_market_demand_getDemand>
+        }
+
+        /**
+         * Identifies pricing and market opportunities.
+         */
+        public async getOpportunities(): Promise<ResponseType<typeof api_market_opportunities_getOpportunities>> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/market/opportunities`, {method: "GET", body: undefined})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_market_opportunities_getOpportunities>
+        }
+
+        /**
+         * Gets trend data for a specific category.
+         */
+        public async getTrends(params: { category: string }): Promise<ResponseType<typeof api_market_trends_getTrends>> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/market/trends/${encodeURIComponent(params.category)}`, {method: "GET", body: undefined})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_market_trends_getTrends>
+        }
+
+        /**
+         * Adds a competitor to the tracking list.
+         */
+        public async trackCompetitor(params: RequestType<typeof api_market_competitors_trackCompetitor>): Promise<ResponseType<typeof api_market_competitors_trackCompetitor>> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/market/competitors/track`, {method: "POST", body: JSON.stringify(params)})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_market_competitors_trackCompetitor>
+        }
+    }
+}
+
+/**
+ * Import the endpoint handlers to derive the types for the client.
+ */
+import {
+    getAuthUrl as api_marketplace_connections_getAuthUrl,
+    handleCallback as api_marketplace_connections_handleCallback
+} from "~backend/marketplace/connections";
+
+export namespace marketplace {
+
+    export class ServiceClient {
+        private baseClient: BaseClient
+
+        constructor(baseClient: BaseClient) {
+            this.baseClient = baseClient
+            this.getAuthUrl = this.getAuthUrl.bind(this)
+            this.handleCallback = this.handleCallback.bind(this)
+        }
+
+        /**
+         * Generates OAuth authorization URL for a given marketplace.
+         */
+        public async getAuthUrl(params: RequestType<typeof api_marketplace_connections_getAuthUrl>): Promise<ResponseType<typeof api_marketplace_connections_getAuthUrl>> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/marketplace/auth/url`, {method: "POST", body: JSON.stringify(params)})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_marketplace_connections_getAuthUrl>
+        }
+
+        /**
+         * Handles OAuth callback and exchanges code for tokens.
+         */
+        public async handleCallback(params: RequestType<typeof api_marketplace_connections_handleCallback>): Promise<ResponseType<typeof api_marketplace_connections_handleCallback>> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/marketplace/auth/callback`, {method: "POST", body: JSON.stringify(params)})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_marketplace_connections_handleCallback>
+        }
+    }
+}
+
+/**
+ * Import the endpoint handlers to derive the types for the client.
+ */
+import { calculateConfidenceScore as api_ml_confidence_scoring_calculateConfidenceScore } from "~backend/ml/confidence_scoring";
+import { forecastDemand as api_ml_demand_forecasting_forecastDemand } from "~backend/ml/demand_forecasting";
+import { detectMarketAnomaly as api_ml_market_anomaly_detector_detectMarketAnomaly } from "~backend/ml/market_anomaly_detector";
+import { predictPrice as api_ml_price_prediction_predictPrice } from "~backend/ml/price_prediction";
+import { generateProductDNA as api_ml_product_dna_generateProductDNA } from "~backend/ml/product_dna";
+import { analyzeSentiment as api_ml_sentiment_analysis_analyzeSentiment } from "~backend/ml/sentiment_analysis";
 
 export namespace ml {
 
@@ -298,16 +1573,144 @@ export namespace ml {
 
         constructor(baseClient: BaseClient) {
             this.baseClient = baseClient
-            this.findSimilar = this.findSimilar.bind(this)
+            this.analyzeSentiment = this.analyzeSentiment.bind(this)
+            this.calculateConfidenceScore = this.calculateConfidenceScore.bind(this)
+            this.detectMarketAnomaly = this.detectMarketAnomaly.bind(this)
+            this.forecastDemand = this.forecastDemand.bind(this)
+            this.generateProductDNA = this.generateProductDNA.bind(this)
+            this.predictPrice = this.predictPrice.bind(this)
         }
 
         /**
-         * Finds similar products using vector similarity.
+         * Analyzes the sentiment of a given text using a BERT model.
          */
-        public async findSimilar(params: RequestType<typeof api_ml_vector_store_findSimilar>): Promise<ResponseType<typeof api_ml_vector_store_findSimilar>> {
+        public async analyzeSentiment(params: RequestType<typeof api_ml_sentiment_analysis_analyzeSentiment>): Promise<ResponseType<typeof api_ml_sentiment_analysis_analyzeSentiment>> {
             // Now make the actual call to the API
-            const resp = await this.baseClient.callTypedAPI(`/ml/similar`, {method: "POST", body: JSON.stringify(params)})
-            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_ml_vector_store_findSimilar>
+            const resp = await this.baseClient.callTypedAPI(`/ml/analyze/sentiment`, {method: "POST", body: JSON.stringify(params)})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_ml_sentiment_analysis_analyzeSentiment>
+        }
+
+        /**
+         * Calculates comprehensive confidence scores for AI predictions.
+         */
+        public async calculateConfidenceScore(params: RequestType<typeof api_ml_confidence_scoring_calculateConfidenceScore>): Promise<ResponseType<typeof api_ml_confidence_scoring_calculateConfidenceScore>> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/ml/confidence/calculate`, {method: "POST", body: JSON.stringify(params)})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_ml_confidence_scoring_calculateConfidenceScore>
+        }
+
+        /**
+         * Detects unusual market behavior using advanced models.
+         */
+        public async detectMarketAnomaly(params: RequestType<typeof api_ml_market_anomaly_detector_detectMarketAnomaly>): Promise<ResponseType<typeof api_ml_market_anomaly_detector_detectMarketAnomaly>> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/ml/anomaly/detect`, {method: "POST", body: JSON.stringify(params)})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_ml_market_anomaly_detector_detectMarketAnomaly>
+        }
+
+        /**
+         * Forecasts demand for a product using an LSTM network model.
+         */
+        public async forecastDemand(params: RequestType<typeof api_ml_demand_forecasting_forecastDemand>): Promise<ResponseType<typeof api_ml_demand_forecasting_forecastDemand>> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/ml/forecast/demand`, {method: "POST", body: JSON.stringify(params)})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_ml_demand_forecasting_forecastDemand>
+        }
+
+        /**
+         * Generates a complete Product DNA profile.
+         */
+        public async generateProductDNA(params: RequestType<typeof api_ml_product_dna_generateProductDNA>): Promise<ResponseType<typeof api_ml_product_dna_generateProductDNA>> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/ml/dna/generate`, {method: "POST", body: JSON.stringify(params)})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_ml_product_dna_generateProductDNA>
+        }
+
+        /**
+         * Predicts the optimal price for a listing using an ensemble of deep learning models.
+         */
+        public async predictPrice(params: RequestType<typeof api_ml_price_prediction_predictPrice>): Promise<ResponseType<typeof api_ml_price_prediction_predictPrice>> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/ml/predict/price`, {method: "POST", body: JSON.stringify(params)})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_ml_price_prediction_predictPrice>
+        }
+    }
+}
+
+/**
+ * Import the endpoint handlers to derive the types for the client.
+ */
+import { compare as api_moat_benchmarking_compare } from "~backend/moat/benchmarking";
+import {
+    contribute as api_moat_network_effects_contribute,
+    getCollectiveIntelligence as api_moat_network_effects_getCollectiveIntelligence
+} from "~backend/moat/network_effects";
+import { getProprietaryMetrics as api_moat_proprietary_metrics_getProprietaryMetrics } from "~backend/moat/proprietary_metrics";
+import { generate as api_moat_synthetic_generator_generate } from "~backend/moat/synthetic_generator";
+
+export namespace moat {
+
+    export class ServiceClient {
+        private baseClient: BaseClient
+
+        constructor(baseClient: BaseClient) {
+            this.baseClient = baseClient
+            this.compare = this.compare.bind(this)
+            this.contribute = this.contribute.bind(this)
+            this.generate = this.generate.bind(this)
+            this.getCollectiveIntelligence = this.getCollectiveIntelligence.bind(this)
+            this.getProprietaryMetrics = this.getProprietaryMetrics.bind(this)
+        }
+
+        /**
+         * Compares a listing's performance against anonymous peer benchmarks.
+         */
+        public async compare(params: RequestType<typeof api_moat_benchmarking_compare>): Promise<ResponseType<typeof api_moat_benchmarking_compare>> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/moat/benchmark/compare`, {method: "POST", body: JSON.stringify(params)})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_moat_benchmarking_compare>
+        }
+
+        /**
+         * Contributes anonymized data to the collective intelligence network.
+         */
+        public async contribute(params: RequestType<typeof api_moat_network_effects_contribute>): Promise<ResponseType<typeof api_moat_network_effects_contribute>> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/moat/network/contribute`, {method: "POST", body: JSON.stringify(params)})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_moat_network_effects_contribute>
+        }
+
+        /**
+         * Generates synthetic data for training and testing.
+         */
+        public async generate(params: RequestType<typeof api_moat_synthetic_generator_generate>): Promise<ResponseType<typeof api_moat_synthetic_generator_generate>> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/moat/synthetic/generate`, {method: "POST", body: JSON.stringify(params)})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_moat_synthetic_generator_generate>
+        }
+
+        /**
+         * Gets collective intelligence insights derived from the network.
+         */
+        public async getCollectiveIntelligence(params: RequestType<typeof api_moat_network_effects_getCollectiveIntelligence>): Promise<ResponseType<typeof api_moat_network_effects_getCollectiveIntelligence>> {
+            // Convert our params into the objects we need for the request
+            const query = makeRecord<string, string | string[]>({
+                categoryId:  params.categoryId,
+                insightType: String(params.insightType),
+            })
+
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/moat/intelligence/collective`, {query, method: "GET", body: undefined})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_moat_network_effects_getCollectiveIntelligence>
+        }
+
+        /**
+         * Gets proprietary performance metrics for a listing.
+         */
+        public async getProprietaryMetrics(params: { listingId: string }): Promise<ResponseType<typeof api_moat_proprietary_metrics_getProprietaryMetrics>> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/moat/metrics/proprietary/${encodeURIComponent(params.listingId)}`, {method: "GET", body: undefined})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_moat_proprietary_metrics_getProprietaryMetrics>
         }
     }
 }
@@ -380,6 +1783,132 @@ export namespace notifications {
 /**
  * Import the endpoint handlers to derive the types for the client.
  */
+import {
+    marketAnalysis as api_orchestrator_endpoints_marketAnalysis,
+    repriceAll as api_orchestrator_endpoints_repriceAll
+} from "~backend/orchestrator/endpoints";
+
+export namespace orchestrator {
+
+    export class ServiceClient {
+        private baseClient: BaseClient
+
+        constructor(baseClient: BaseClient) {
+            this.baseClient = baseClient
+            this.marketAnalysis = this.marketAnalysis.bind(this)
+            this.repriceAll = this.repriceAll.bind(this)
+        }
+
+        /**
+         * Orchestrates a full market analysis workflow.
+         */
+        public async marketAnalysis(): Promise<ResponseType<typeof api_orchestrator_endpoints_marketAnalysis>> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/orchestrate/market-analysis`, {method: "POST", body: undefined})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_orchestrator_endpoints_marketAnalysis>
+        }
+
+        /**
+         * Orchestrates a bulk repricing workflow for all eligible listings.
+         */
+        public async repriceAll(params: RequestType<typeof api_orchestrator_endpoints_repriceAll>): Promise<ResponseType<typeof api_orchestrator_endpoints_repriceAll>> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/orchestrate/reprice-all`, {method: "POST", body: JSON.stringify(params)})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_orchestrator_endpoints_repriceAll>
+        }
+    }
+}
+
+/**
+ * Import the endpoint handlers to derive the types for the client.
+ */
+import { routeOrder as api_orders_routing_routeOrder } from "~backend/orders/routing";
+
+export namespace orders {
+
+    export class ServiceClient {
+        private baseClient: BaseClient
+
+        constructor(baseClient: BaseClient) {
+            this.baseClient = baseClient
+            this.routeOrder = this.routeOrder.bind(this)
+        }
+
+        /**
+         * Routes an order for fulfillment.
+         */
+        public async routeOrder(params: RequestType<typeof api_orders_routing_routeOrder>): Promise<ResponseType<typeof api_orders_routing_routeOrder>> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/orders/route`, {method: "POST", body: JSON.stringify(params)})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_orders_routing_routeOrder>
+        }
+    }
+}
+
+/**
+ * Import the endpoint handlers to derive the types for the client.
+ */
+import {
+    getLineage as api_pipeline_endpoints_getLineage,
+    getStatus as api_pipeline_endpoints_getStatus,
+    ingest as api_pipeline_endpoints_ingest,
+    transform as api_pipeline_endpoints_transform
+} from "~backend/pipeline/endpoints";
+
+export namespace pipeline {
+
+    export class ServiceClient {
+        private baseClient: BaseClient
+
+        constructor(baseClient: BaseClient) {
+            this.baseClient = baseClient
+            this.getLineage = this.getLineage.bind(this)
+            this.getStatus = this.getStatus.bind(this)
+            this.ingest = this.ingest.bind(this)
+            this.transform = this.transform.bind(this)
+        }
+
+        /**
+         * Gets the data lineage for a specific data asset.
+         */
+        public async getLineage(params: { assetId: string }): Promise<ResponseType<typeof api_pipeline_endpoints_getLineage>> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/pipeline/lineage/${encodeURIComponent(params.assetId)}`, {method: "GET", body: undefined})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_pipeline_endpoints_getLineage>
+        }
+
+        /**
+         * Gets the status of a specific pipeline run.
+         */
+        public async getStatus(params: { runId: string }): Promise<ResponseType<typeof api_pipeline_endpoints_getStatus>> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/pipeline/status/${encodeURIComponent(params.runId)}`, {method: "GET", body: undefined})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_pipeline_endpoints_getStatus>
+        }
+
+        /**
+         * Ingests data from a specified source into the pipeline.
+         */
+        public async ingest(params: RequestType<typeof api_pipeline_endpoints_ingest>): Promise<ResponseType<typeof api_pipeline_endpoints_ingest>> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/pipeline/ingest`, {method: "POST", body: JSON.stringify(params)})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_pipeline_endpoints_ingest>
+        }
+
+        /**
+         * Triggers a data transformation job.
+         */
+        public async transform(params: RequestType<typeof api_pipeline_endpoints_transform>): Promise<ResponseType<typeof api_pipeline_endpoints_transform>> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/pipeline/transform`, {method: "POST", body: JSON.stringify(params)})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_pipeline_endpoints_transform>
+        }
+    }
+}
+
+/**
+ * Import the endpoint handlers to derive the types for the client.
+ */
 import { analyzeMarket as api_pricing_analyze_market_analyzeMarket } from "~backend/pricing/analyze_market";
 import { applyPrice as api_pricing_apply_price_applyPrice } from "~backend/pricing/apply_price";
 
@@ -410,6 +1939,217 @@ export namespace pricing {
             // Now make the actual call to the API
             const resp = await this.baseClient.callTypedAPI(`/pricing/apply`, {method: "POST", body: JSON.stringify(params)})
             return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_pricing_apply_price_applyPrice>
+        }
+    }
+}
+
+/**
+ * Import the endpoint handlers to derive the types for the client.
+ */
+import { getEfficiencyMetrics as api_profit_efficiency_metrics_getEfficiencyMetrics } from "~backend/profit/efficiency_metrics";
+import { calculateLTV as api_profit_ltv_modeler_calculateLTV } from "~backend/profit/ltv_modeler";
+import { optimizePortfolio as api_profit_portfolio_optimizer_optimizePortfolio } from "~backend/profit/portfolio_optimizer";
+import { assessRisk as api_profit_risk_assessor_assessRisk } from "~backend/profit/risk_assessor";
+import { simulation as api_profit_simulation_runner_simulation } from "~backend/profit/simulation_runner";
+
+export namespace profit {
+
+    export class ServiceClient {
+        private baseClient: BaseClient
+
+        constructor(baseClient: BaseClient) {
+            this.baseClient = baseClient
+            this.assessRisk = this.assessRisk.bind(this)
+            this.calculateLTV = this.calculateLTV.bind(this)
+            this.getEfficiencyMetrics = this.getEfficiencyMetrics.bind(this)
+            this.optimizePortfolio = this.optimizePortfolio.bind(this)
+            this.simulation = this.simulation.bind(this)
+        }
+
+        /**
+         * Assesses the financial risk of a pricing decision.
+         */
+        public async assessRisk(params: RequestType<typeof api_profit_risk_assessor_assessRisk>): Promise<ResponseType<typeof api_profit_risk_assessor_assessRisk>> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/profit/risk/assess`, {method: "POST", body: JSON.stringify(params)})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_profit_risk_assessor_assessRisk>
+        }
+
+        /**
+         * Calculates the lifetime value (LTV) for a customer.
+         */
+        public async calculateLTV(params: RequestType<typeof api_profit_ltv_modeler_calculateLTV>): Promise<ResponseType<typeof api_profit_ltv_modeler_calculateLTV>> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/profit/ltv/calculate`, {method: "POST", body: JSON.stringify(params)})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_profit_ltv_modeler_calculateLTV>
+        }
+
+        /**
+         * Gets key financial efficiency metrics.
+         */
+        public async getEfficiencyMetrics(): Promise<ResponseType<typeof api_profit_efficiency_metrics_getEfficiencyMetrics>> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/profit/efficiency/metrics`, {method: "GET", body: undefined})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_profit_efficiency_metrics_getEfficiencyMetrics>
+        }
+
+        /**
+         * Optimizes the entire product portfolio for maximum profitability.
+         */
+        public async optimizePortfolio(params: RequestType<typeof api_profit_portfolio_optimizer_optimizePortfolio>): Promise<ResponseType<typeof api_profit_portfolio_optimizer_optimizePortfolio>> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/profit/optimize/portfolio`, {method: "POST", body: JSON.stringify(params)})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_profit_portfolio_optimizer_optimizePortfolio>
+        }
+
+        /**
+         * Runs a Monte Carlo simulation for a pricing decision.
+         */
+        public async simulation(params: RequestType<typeof api_profit_simulation_runner_simulation>): Promise<ResponseType<typeof api_profit_simulation_runner_simulation>> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/profit/simulation/monte-carlo`, {method: "POST", body: JSON.stringify(params)})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_profit_simulation_runner_simulation>
+        }
+    }
+}
+
+/**
+ * Import the endpoint handlers to derive the types for the client.
+ */
+import { selectStrategy as api_strategy_ai_selector_selectStrategy } from "~backend/strategy/ai_selector";
+import {
+    getBacktestHistory as api_strategy_backtesting_getBacktestHistory,
+    runBacktest as api_strategy_backtesting_runBacktest
+} from "~backend/strategy/backtesting";
+import {
+    customizeStrategy as api_strategy_custom_strategies_customizeStrategy,
+    deleteCustomStrategy as api_strategy_custom_strategies_deleteCustomStrategy,
+    getCustomStrategies as api_strategy_custom_strategies_getCustomStrategies,
+    updateCustomStrategy as api_strategy_custom_strategies_updateCustomStrategy
+} from "~backend/strategy/custom_strategies";
+import { getPerformance as api_strategy_performance_tracker_getPerformance } from "~backend/strategy/performance_tracker";
+import { evaluateStrategies as api_strategy_strategy_engine_evaluateStrategies } from "~backend/strategy/strategy_engine";
+
+export namespace strategy {
+
+    export class ServiceClient {
+        private baseClient: BaseClient
+
+        constructor(baseClient: BaseClient) {
+            this.baseClient = baseClient
+            this.customizeStrategy = this.customizeStrategy.bind(this)
+            this.deleteCustomStrategy = this.deleteCustomStrategy.bind(this)
+            this.evaluateStrategies = this.evaluateStrategies.bind(this)
+            this.getBacktestHistory = this.getBacktestHistory.bind(this)
+            this.getCustomStrategies = this.getCustomStrategies.bind(this)
+            this.getPerformance = this.getPerformance.bind(this)
+            this.runBacktest = this.runBacktest.bind(this)
+            this.selectStrategy = this.selectStrategy.bind(this)
+            this.updateCustomStrategy = this.updateCustomStrategy.bind(this)
+        }
+
+        /**
+         * Creates a custom pricing strategy with user-defined rules.
+         */
+        public async customizeStrategy(params: RequestType<typeof api_strategy_custom_strategies_customizeStrategy>): Promise<ResponseType<typeof api_strategy_custom_strategies_customizeStrategy>> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/strategy/customize`, {method: "POST", body: JSON.stringify(params)})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_strategy_custom_strategies_customizeStrategy>
+        }
+
+        /**
+         * Deletes a custom strategy
+         */
+        public async deleteCustomStrategy(params: { strategyId: string }): Promise<ResponseType<typeof api_strategy_custom_strategies_deleteCustomStrategy>> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/strategy/custom/${encodeURIComponent(params.strategyId)}`, {method: "DELETE", body: undefined})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_strategy_custom_strategies_deleteCustomStrategy>
+        }
+
+        /**
+         * Evaluates multiple pricing strategies for a specific product.
+         */
+        public async evaluateStrategies(params: RequestType<typeof api_strategy_strategy_engine_evaluateStrategies>): Promise<ResponseType<typeof api_strategy_strategy_engine_evaluateStrategies>> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/strategy/evaluate`, {method: "POST", body: JSON.stringify(params)})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_strategy_strategy_engine_evaluateStrategies>
+        }
+
+        /**
+         * Gets historical backtest results
+         */
+        public async getBacktestHistory(params: RequestType<typeof api_strategy_backtesting_getBacktestHistory>): Promise<ResponseType<typeof api_strategy_backtesting_getBacktestHistory>> {
+            // Convert our params into the objects we need for the request
+            const query = makeRecord<string, string | string[]>({
+                strategyId: params.strategyId,
+            })
+
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/strategy/backtests`, {query, method: "GET", body: undefined})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_strategy_backtesting_getBacktestHistory>
+        }
+
+        /**
+         * Gets user's custom strategies
+         */
+        public async getCustomStrategies(): Promise<ResponseType<typeof api_strategy_custom_strategies_getCustomStrategies>> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/strategy/custom`, {method: "GET", body: undefined})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_strategy_custom_strategies_getCustomStrategies>
+        }
+
+        /**
+         * Gets comprehensive performance metrics for pricing strategies.
+         */
+        public async getPerformance(params: RequestType<typeof api_strategy_performance_tracker_getPerformance>): Promise<ResponseType<typeof api_strategy_performance_tracker_getPerformance>> {
+            // Convert our params into the objects we need for the request
+            const query = makeRecord<string, string | string[]>({
+                categoryId: params.categoryId,
+                groupBy:    params.groupBy === undefined ? undefined : String(params.groupBy),
+                strategyId: params.strategyId,
+                timeRange:  params.timeRange === undefined ? undefined : String(params.timeRange),
+            })
+
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/strategy/performance`, {query, method: "GET", body: undefined})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_strategy_performance_tracker_getPerformance>
+        }
+
+        /**
+         * Runs a backtest for a pricing strategy using historical data.
+         */
+        public async runBacktest(params: RequestType<typeof api_strategy_backtesting_runBacktest>): Promise<ResponseType<typeof api_strategy_backtesting_runBacktest>> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/strategy/backtest`, {method: "POST", body: JSON.stringify(params)})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_strategy_backtesting_runBacktest>
+        }
+
+        /**
+         * Uses Gemini AI to select the optimal pricing strategy.
+         */
+        public async selectStrategy(params: RequestType<typeof api_strategy_ai_selector_selectStrategy>): Promise<ResponseType<typeof api_strategy_ai_selector_selectStrategy>> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/strategy/select`, {method: "POST", body: JSON.stringify(params)})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_strategy_ai_selector_selectStrategy>
+        }
+
+        /**
+         * Updates a custom strategy
+         */
+        public async updateCustomStrategy(params: RequestType<typeof api_strategy_custom_strategies_updateCustomStrategy>): Promise<ResponseType<typeof api_strategy_custom_strategies_updateCustomStrategy>> {
+            // Construct the body with only the fields which we want encoded within the body (excluding query string or header fields)
+            const body: Record<string, any> = {
+                baseStrategyType: params.baseStrategyType,
+                conditions:       params.conditions,
+                constraints:      params.constraints,
+                customRules:      params.customRules,
+                description:      params.description,
+                name:             params.name,
+            }
+
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/strategy/custom/${encodeURIComponent(params.strategyId)}`, {method: "PUT", body: JSON.stringify(body)})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_strategy_custom_strategies_updateCustomStrategy>
         }
     }
 }
