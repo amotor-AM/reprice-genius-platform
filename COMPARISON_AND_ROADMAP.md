@@ -30,6 +30,7 @@ This document provides a comprehensive comparison between the existing Reprice G
 - **Intelligence Service**: Advanced forecasting, external signal integration, and competitive intelligence.
 - **Adapt Service**: Real-time adaptation to micro-changes using stream processing and CEP.
 - **Profit Service**: Advanced profitability optimization, LTV modeling, and risk assessment.
+- **Composer Service**: AI-powered strategy generation from natural language descriptions.
 - **Data Pipeline**: Dedicated service for ETL/ELT, data lake management, and data quality.
 - **Multi-Marketplace**: Abstracted marketplace service with adapters for eBay, Amazon, Shopify, etc.
 - **AI Copilot**: Natural language interface for platform control and conversational AI.
@@ -59,6 +60,7 @@ This document provides a comprehensive comparison between the existing Reprice G
 ├── SQL Database (intelligence data, forecasts, signals)
 ├── SQL Database (real-time adaptation state)
 ├── SQL Database (profit models, LTV, risk)
+├── SQL Database (composed strategies, simulations)
 ├── SQL Database (events for audit trail)
 ├── SQL Database (saga state management)
 ├── SQL Database (centralized feature store)

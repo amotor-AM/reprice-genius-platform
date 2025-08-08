@@ -12,6 +12,7 @@ An AI-powered eBay repricing platform built with Encore.ts that optimizes produc
 - **Intelligence Service**: Advanced forecasting, external signal integration, and competitive intelligence.
 - **Real-time Adaptation**: Adapts to micro-changes in the market using stream processing and CEP.
 - **Profit Maximization**: Advanced profitability optimization, LTV modeling, and risk assessment.
+- **AI Strategy Composer**: Generate complex pricing strategies from simple natural language descriptions.
 - **Risk Management**: Built-in safeguards and price boundaries
 - **Comprehensive Analytics**: Detailed performance tracking and insights
 - **Event-Driven Architecture**: Scalable and resilient workflows using sagas and an event bus.
@@ -39,6 +40,7 @@ An AI-powered eBay repricing platform built with Encore.ts that optimizes produc
 - **Intel Service**: Advanced forecasting and competitive intelligence.
 - **Adapt Service**: Real-time adaptation and micro-moment strategy adjustments.
 - **Profit Service**: Advanced profitability optimization and financial modeling.
+- **Composer Service**: AI-powered strategy generation from natural language.
 - **Cache Service**: High-performance caching layer
 - **Monitoring Service**: Error tracking and performance monitoring
 - **Notifications Service**: Alert system for price changes
