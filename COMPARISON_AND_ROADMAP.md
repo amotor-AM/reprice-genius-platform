@@ -28,6 +28,7 @@ This document provides a comprehensive comparison between the existing Reprice G
 - **Learning Service**: Autonomous learning system with meta-learning, causal inference, and automated experimentation.
 - **Behavioral AI Service**: Models buyer and competitor psychology using behavioral economics and game theory.
 - **Intelligence Service**: Advanced forecasting, external signal integration, and competitive intelligence.
+- **Adapt Service**: Real-time adaptation to micro-changes using stream processing and CEP.
 - **Data Pipeline**: Dedicated service for ETL/ELT, data lake management, and data quality.
 - **Multi-Marketplace**: Abstracted marketplace service with adapters for eBay, Amazon, Shopify, etc.
 - **AI Copilot**: Natural language interface for platform control and conversational AI.
@@ -55,6 +56,7 @@ This document provides a comprehensive comparison between the existing Reprice G
 ├── SQL Database (learning feedback, experiments, causal graphs, meta-learning)
 ├── SQL Database (behavioral models, psychographics, competitor profiles)
 ├── SQL Database (intelligence data, forecasts, signals)
+├── SQL Database (real-time adaptation state)
 ├── SQL Database (events for audit trail)
 ├── SQL Database (saga state management)
 ├── SQL Database (centralized feature store)
