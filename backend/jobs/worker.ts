@@ -7,7 +7,7 @@ import {
   lowJobQueue, 
   JobPayload 
 } from "./queues";
-import { orchestrator, market, analytics, learning } from "~encore/clients";
+import { orchestrator, market, analytics, learning, ml } from "~encore/clients";
 
 // Generic job processor
 async function processJob(event: JobPayload) {
@@ -44,7 +44,7 @@ async function processJob(event: JobPayload) {
         await monitorFailedJobs();
         break;
       case 'detect_price_anomalies':
-        await analytics.detectPriceAnomalies();
+        await ml.detectMarketAnomaly({ detectionType: 'price_volatility' });
         break;
       case 'check_completed_experiments':
         await learning.checkCompletedExperiments();

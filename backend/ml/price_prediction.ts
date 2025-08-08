@@ -2,6 +2,8 @@ import { api, APIError } from "encore.dev/api";
 import { getAuthData } from "~encore/auth";
 import { mlDB } from "./db";
 import { listingsDB } from "../listings/db";
+import { predictWithEnsemble } from "./models/ensemble_model";
+import { getProductDNA } from "./product_dna";
 
 export interface PricePredictionRequest {
   listingId: string;
@@ -22,7 +24,7 @@ export interface PricePredictionResponse {
   modelVersion: string;
 }
 
-// Predicts the optimal price for a listing using a transformer model.
+// Predicts the optimal price for a listing using an ensemble of deep learning models.
 export const predictPrice = api<PricePredictionRequest, PricePredictionResponse>(
   { auth: true, expose: true, method: "POST", path: "/ml/predict/price" },
   async (req) => {
@@ -44,51 +46,37 @@ export const predictPrice = api<PricePredictionRequest, PricePredictionResponse>
       throw APIError.notFound("No marketplace listing found for this product");
     }
 
-    // In a real implementation, this would call a service running the transformer model.
-    // Here, we simulate the output of such a model.
-    const prediction = simulateTransformerPrediction(listing, marketplaceListing, req.context);
+    // Get Product DNA
+    const productDNA = await getProductDNA(req.listingId);
+
+    // Prepare data for ensemble model
+    const ensembleRequest = {
+      structuredData: {
+        currentPrice: marketplaceListing.current_price,
+        views: (marketplaceListing.metadata as any)?.views || 0,
+        watchers: (marketplaceListing.metadata as any)?.watchers || 0,
+        ...req.context,
+      },
+      timeSeriesData: productDNA.priceHistory || [],
+      textFeatures: productDNA.textEmbedding,
+      imageFeatures: productDNA.imageEmbedding,
+    };
+
+    // Get prediction from ensemble model
+    const prediction = await predictWithEnsemble(ensembleRequest);
+
+    // Scale prediction to a price
+    const predictedPrice = marketplaceListing.current_price * (1 + (prediction.prediction - 0.5) * 0.2);
 
     return {
       listingId: req.listingId,
-      predictedPrice: prediction.price,
+      predictedPrice: Math.round(predictedPrice * 100) / 100,
       confidence: prediction.confidence,
       priceRange: {
-        lowerBound: prediction.price * 0.9,
-        upperBound: prediction.price * 1.1,
+        lowerBound: predictedPrice * 0.9,
+        upperBound: predictedPrice * 1.1,
       },
-      modelVersion: "transformer_v1.3",
+      modelVersion: "ensemble_v2.1",
     };
   }
 );
-
-function simulateTransformerPrediction(product: any, listing: any, context?: any): { price: number; confidence: number } {
-  // Simulate a complex prediction based on listing and market context
-  let basePrice = listing.current_price;
-  let confidence = 0.75;
-
-  // Adjust based on title and description (simulating text understanding)
-  if (product.title.toLowerCase().includes('rare') || product.title.toLowerCase().includes('vintage')) {
-    basePrice *= 1.1;
-    confidence += 0.05;
-  }
-
-  // Adjust based on market context
-  if (context?.marketTrend === 'rising') {
-    basePrice *= 1.05;
-    confidence += 0.03;
-  } else if (context?.marketTrend === 'declining') {
-    basePrice *= 0.95;
-  }
-
-  if (context?.competitorPrices && context.competitorPrices.length > 0) {
-    const avgCompetitorPrice = context.competitorPrices.reduce((sum, p) => sum + p, 0) / context.competitorPrices.length;
-    // Move towards competitor average
-    basePrice = (basePrice * 0.7) + (avgCompetitorPrice * 0.3);
-    confidence += 0.1;
-  }
-
-  return {
-    price: Math.round(basePrice * 100) / 100,
-    confidence: Math.min(0.95, confidence),
-  };
-}

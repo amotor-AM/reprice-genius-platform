@@ -15,7 +15,7 @@ An AI-powered eBay repricing platform built with Encore.ts that optimizes produc
 - **Cohort Analysis**: Track performance of pricing strategies over time.
 - **Real-time Analytics**: Live streaming of key performance indicators.
 - **Background Jobs**: Dedicated service for managing all asynchronous tasks.
-- **Advanced AI Capabilities**: Transformer models, LSTMs, GNNs, and Deep Reinforcement Learning for state-of-the-art pricing optimization.
+- **Advanced AI Capabilities**: Cutting-edge deep learning system with multi-modal analysis and a "Product DNA" system.
 - **Data Pipeline**: Robust ETL/ELT pipelines with a data lake architecture for scalable data management.
 - **Multi-Marketplace Support**: Unified platform for eBay, Amazon, Shopify, and more with centralized inventory and order management.
 - **AI Copilot**: Natural language interface for platform control, conversational AI, and proactive insights.
@@ -30,7 +30,7 @@ An AI-powered eBay repricing platform built with Encore.ts that optimizes produc
 - **Pricing Service**: AI-powered pricing algorithms
 - **Analytics Service**: Performance metrics, forecasting, and insights
 - **Learning Service**: Feedback processing and model improvement
-- **ML Service**: Vector operations, sentiment analysis, and advanced model serving
+- **ML Service**: Multi-modal deep learning, Product DNA, and predictive modeling.
 - **Cache Service**: High-performance caching layer
 - **Monitoring Service**: Error tracking and performance monitoring
 - **Notifications Service**: Alert system for price changes

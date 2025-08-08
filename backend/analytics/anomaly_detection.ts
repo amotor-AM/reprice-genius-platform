@@ -2,6 +2,7 @@ import { api, APIError } from "encore.dev/api";
 import { getAuthData } from "~encore/auth";
 import { analyticsDB } from "./db";
 import { listingsDB } from "../listings/db";
+import { ml } from "~encore/clients";
 
 export interface Anomaly {
   id: number;
@@ -17,48 +18,23 @@ export interface Anomaly {
 export const detectPriceAnomalies = api<void, { detected: number }>(
   { method: "POST", path: "/analytics/internal/detect-anomalies" },
   async () => {
-    let detectedCount = 0;
-    // Get recent price changes
-    const recentChanges = await listingsDB.queryAll`
-      SELECT 
-        marketplace_listing_id, old_price, new_price, 
-        (new_price - old_price) / old_price as magnitude
-      FROM price_history
-      WHERE created_at >= NOW() - INTERVAL '1 hour'
-    `;
+    // Use the new ML service for advanced anomaly detection
+    const response = await ml.detectMarketAnomaly({
+      detectionType: 'price_volatility',
+      timeHorizonHours: 24,
+      sensitivity: 'high',
+    });
 
-    for (const change of recentChanges) {
-      if (Math.abs(change.magnitude) > 0.5) { // > 50% change
-        await analyticsDB.exec`
-          INSERT INTO price_anomalies (listing_id, anomaly_type, description, magnitude)
-          VALUES (${change.marketplace_listing_id}, 'sudden_change', 
-                  'Price changed from $${change.old_price} to $${change.new_price}', 
-                  ${change.magnitude})
-        `;
-        detectedCount++;
-      }
-    }
-
-    // Detect high volatility
-    const volatileListings = await listingsDB.queryAll`
-      SELECT marketplace_listing_id, COUNT(*) as change_count
-      FROM price_history
-      WHERE created_at >= NOW() - INTERVAL '24 hours'
-      GROUP BY marketplace_listing_id
-      HAVING COUNT(*) > 5
-    `;
-
-    for (const listing of volatileListings) {
+    // Store detected anomalies
+    for (const anomaly of response.anomalies) {
       await analyticsDB.exec`
-        INSERT INTO price_anomalies (listing_id, anomaly_type, description, magnitude)
-        VALUES (${listing.marketplace_listing_id}, 'high_volatility', 
-                '${listing.change_count} price changes in 24 hours', 
-                ${listing.change_count})
+        INSERT INTO price_anomalies (listing_id, anomaly_type, description, magnitude, status)
+        VALUES (${anomaly.entityId}, ${anomaly.anomalyType}, ${anomaly.description}, ${anomaly.score}, 'new')
         ON CONFLICT (listing_id, anomaly_type) DO NOTHING
       `;
-      detectedCount++;
     }
-    return { detected: detectedCount };
+
+    return { detected: response.anomalies.length };
   }
 );
 

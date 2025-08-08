@@ -24,7 +24,7 @@ This document provides a comprehensive comparison between the existing Reprice G
 - **Deployment**: Automatic with Encore Cloud
 - **API**: Type-safe with auto-generated clients
 - **Architecture**: Event-driven with sagas for complex workflows
-- **AI/ML**: Advanced capabilities including Transformers, LSTMs, GNNs, and a unified AI pipeline.
+- **AI/ML**: Cutting-edge deep learning system with multi-modal analysis and a "Product DNA" system.
 - **Data Pipeline**: Dedicated service for ETL/ELT, data lake management, and data quality.
 - **Multi-Marketplace**: Abstracted marketplace service with adapters for eBay, Amazon, Shopify, etc.
 - **AI Copilot**: Natural language interface for platform control and conversational AI.
@@ -54,7 +54,8 @@ This document provides a comprehensive comparison between the existing Reprice G
 ├── SQL Database (saga state management)
 ├── SQL Database (centralized feature store)
 ├── SQL Database (data pipeline metadata)
-└── SQL Database (copilot chat history)
+├── SQL Database (copilot chat history)
+└── SQL Database (product DNA & predictions)
 ```
 
 **Key Differences:**
