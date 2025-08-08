@@ -18,6 +18,7 @@ An AI-powered eBay repricing platform built with Encore.ts that optimizes produc
 - **Advanced AI Capabilities**: Transformer models, LSTMs, GNNs, and Deep Reinforcement Learning for state-of-the-art pricing optimization.
 - **Data Pipeline**: Robust ETL/ELT pipelines with a data lake architecture for scalable data management.
 - **Multi-Marketplace Support**: Unified platform for eBay, Amazon, Shopify, and more with centralized inventory and order management.
+- **AI Copilot**: Natural language interface for platform control, conversational AI, and proactive insights.
 
 ## 🏗️ Architecture
 
@@ -41,6 +42,7 @@ An AI-powered eBay repricing platform built with Encore.ts that optimizes produc
 - **Jobs Service**: Manages all asynchronous background tasks and scheduled jobs
 - **Feature Store Service**: Centralized feature management for all AI models
 - **Pipeline Service**: Manages data ingestion, transformation, and quality control
+- **Copilot Service**: Natural language interface and conversational AI
 
 ### Frontend (React + TypeScript)
 - **Modern UI**: Built with React, TypeScript, and Tailwind CSS
@@ -75,6 +77,7 @@ An AI-powered eBay repricing platform built with Encore.ts that optimizes produc
 - Clerk account for authentication
 - eBay Developer account
 - RapidAPI account (optional, for enhanced market data)
+- Google Gemini API Key
 
 ## 🚀 Quick Start
 
@@ -105,6 +108,7 @@ encore secret set EbayClientSecret
 encore secret set EbayRedirectUri
 encore secret set RapidApiKey
 encore secret set SentryDSN
+encore secret set GeminiApiKey
 ```
 
 ### 4. Configure Frontend

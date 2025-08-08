@@ -27,6 +27,7 @@ This document provides a comprehensive comparison between the existing Reprice G
 - **AI/ML**: Advanced capabilities including Transformers, LSTMs, GNNs, and a unified AI pipeline.
 - **Data Pipeline**: Dedicated service for ETL/ELT, data lake management, and data quality.
 - **Multi-Marketplace**: Abstracted marketplace service with adapters for eBay, Amazon, Shopify, etc.
+- **AI Copilot**: Natural language interface for platform control and conversational AI.
 
 ## Detailed Feature Comparison
 
@@ -52,7 +53,8 @@ This document provides a comprehensive comparison between the existing Reprice G
 ├── SQL Database (events for audit trail)
 ├── SQL Database (saga state management)
 ├── SQL Database (centralized feature store)
-└── SQL Database (data pipeline metadata)
+├── SQL Database (data pipeline metadata)
+└── SQL Database (copilot chat history)
 ```
 
 **Key Differences:**
@@ -341,6 +343,7 @@ CREATE TABLE cache_entries (
    - EbayClientSecret
    - EbayRedirectUri
    - RapidApiKey
+   - GeminiApiKey
    ```
 
 2. **Implement Missing Database Tables**
