@@ -23,6 +23,9 @@ An AI-powered eBay repricing platform built with Encore.ts that optimizes produc
 - **Cache Service**: High-performance caching layer
 - **Monitoring Service**: Error tracking and performance monitoring
 - **Notifications Service**: Alert system for price changes
+- **Market Service**: Market intelligence and data aggregation
+- **Graph Service**: Relationship mapping and pattern analysis
+- **Documents Service**: Invoice and CSV processing
 
 ### Frontend (React + TypeScript)
 - **Modern UI**: Built with React, TypeScript, and Tailwind CSS

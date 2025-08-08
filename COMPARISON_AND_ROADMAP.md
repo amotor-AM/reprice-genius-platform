@@ -210,6 +210,16 @@ backend/learning/
 └── auto_optimization.ts   // Automatic model tuning
 ```
 
+#### Market Intelligence
+```typescript
+backend/market/
+├── encore.service.ts
+├── data_aggregator.ts     // Aggregate data from multiple sources
+├── trends.ts              // Track market trends
+├── competitors.ts         // Monitor competitor pricing
+└── opportunities.ts       // Identify pricing opportunities
+```
+
 #### Multi-marketplace Support
 ```typescript
 backend/marketplaces/
