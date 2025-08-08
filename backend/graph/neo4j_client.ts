@@ -1,4 +1,5 @@
 import { secret } from "encore.dev/config";
+import { Buffer } from "buffer";
 
 const neo4jUri = secret("Neo4jUri");
 const neo4jUser = secret("Neo4jUser");
