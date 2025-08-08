@@ -4,6 +4,7 @@ import { secret } from "encore.dev/config";
 import { strategyDB } from "./db";
 import { listingsDB } from "../listings/db";
 import { strategyTopic } from "../events/topics";
+import { callGeminiAPI } from "../brain/prompts";
 
 const geminiApiKey = secret("GeminiApiKey");
 
@@ -75,7 +76,7 @@ export const selectStrategy = api<SelectStrategyRequest, SelectStrategyResponse>
       const aiContext = buildAIContext(req, listing);
       
       // Call Gemini AI for strategy selection
-      const aiResponse = await callGeminiForStrategySelection(aiContext);
+      const aiResponse = await callGeminiAPI(aiContext);
       
       // Parse AI response
       const selection = parseAIStrategySelection(aiResponse, req.evaluatedStrategies);
@@ -178,118 +179,6 @@ Respond in the following JSON format:
 
 Focus on data-driven decision making and provide actionable insights.
 `;
-}
-
-async function callGeminiForStrategySelection(prompt: string): Promise<any> {
-  try {
-    const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-goog-api-key': geminiApiKey(),
-      },
-      body: JSON.stringify({
-        contents: [{
-          parts: [{
-            text: prompt
-          }]
-        }],
-        generationConfig: {
-          temperature: 0.2, // Lower temperature for more consistent strategy selection
-          topK: 40,
-          topP: 0.95,
-          maxOutputTokens: 2048,
-        },
-        safetySettings: [
-          {
-            category: "HARM_CATEGORY_HARASSMENT",
-            threshold: "BLOCK_MEDIUM_AND_ABOVE"
-          },
-          {
-            category: "HARM_CATEGORY_HATE_SPEECH",
-            threshold: "BLOCK_MEDIUM_AND_ABOVE"
-          }
-        ]
-      }),
-    });
-
-    if (!response.ok) {
-      throw new Error(`Gemini API error: ${response.statusText}`);
-    }
-
-    const data = await response.json();
-    
-    if (!data.candidates || data.candidates.length === 0) {
-      throw new Error('No response from Gemini API');
-    }
-
-    const content = data.candidates[0].content.parts[0].text;
-    
-    // Try to parse as JSON
-    try {
-      return JSON.parse(content);
-    } catch {
-      // If not JSON, extract structured data from text
-      return parseTextResponse(content);
-    }
-  } catch (error) {
-    console.error('Gemini API call failed:', error);
-    throw error;
-  }
-}
-
-function parseTextResponse(text: string): any {
-  // Fallback parsing for non-JSON responses
-  const lines = text.split('\n');
-  
-  return {
-    selectedStrategyId: extractValue(text, 'strategy', ''),
-    confidence: 0.75,
-    primaryFactors: extractArray(text, 'factor'),
-    riskAssessment: extractSection(text, 'risk'),
-    marketAnalysis: extractSection(text, 'market'),
-    recommendation: extractSection(text, 'recommend'),
-    alternativeStrategies: [],
-    implementationPlan: {
-      immediateActions: extractArray(text, 'action'),
-      monitoringPoints: extractArray(text, 'monitor'),
-      adjustmentTriggers: extractArray(text, 'trigger'),
-    }
-  };
-}
-
-function extractValue(text: string, key: string, defaultValue: string): string {
-  const pattern = new RegExp(`${key}[:\\s]+(\\w+)`, 'i');
-  const match = text.match(pattern);
-  return match ? match[1] : defaultValue;
-}
-
-function extractArray(text: string, key: string): string[] {
-  const pattern = new RegExp(`${key}[^\\[]*\\[([^\\]]+)\\]`, 'i');
-  const match = text.match(pattern);
-  
-  if (match) {
-    return match[1].split(',').map(item => item.trim().replace(/"/g, ''));
-  }
-  
-  // Fallback: look for numbered lists
-  const listPattern = new RegExp(`${key}[^\\n]*\\n([^\\n]*\\d+\\.[^\\n]*)+`, 'gi');
-  const listMatch = text.match(listPattern);
-  
-  if (listMatch) {
-    return listMatch[0].split('\n')
-      .filter(line => /\d+\./.test(line))
-      .map(line => line.replace(/\d+\.\s*/, '').trim())
-      .slice(0, 3);
-  }
-  
-  return [];
-}
-
-function extractSection(text: string, key: string): string {
-  const pattern = new RegExp(`${key}[^\\n]*\\n([^\\n]{20,}[^\\n]*)`, 'i');
-  const match = text.match(pattern);
-  return match ? match[1].trim() : `${key} analysis not available`;
 }
 
 function parseAIStrategySelection(aiResponse: any, evaluatedStrategies: any[]): SelectStrategyResponse {

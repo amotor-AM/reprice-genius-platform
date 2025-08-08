@@ -2,6 +2,7 @@ import { api, APIError } from "encore.dev/api";
 import { getAuthData } from "~encore/auth";
 import { profitDB } from "./db";
 import { runMonteCarloSimulation } from "./models/monte_carlo";
+import { listingsDB } from "../listings/db";
 
 export interface MonteCarloRequest {
   listingId: string;
@@ -23,10 +24,20 @@ export const simulation = api<MonteCarloRequest, MonteCarloResponse>(
     const auth = getAuthData()!;
     const simulationId = `mc_${Date.now()}`;
 
+    const competitors = await listingsDB.queryAll`
+      SELECT p.id, ml.current_price as price
+      FROM products p
+      JOIN marketplace_listings ml ON p.id = ml.product_id
+      WHERE p.category_id = (SELECT category_id FROM products WHERE id = ${req.listingId})
+        AND p.id != ${req.listingId}
+      LIMIT 10
+    `;
+
     const result = await runMonteCarloSimulation({
       listingId: req.listingId,
       priceChangePercent: req.priceChangePercent,
       simulations: req.simulations || 10000,
+      competitors,
     });
 
     const response = {

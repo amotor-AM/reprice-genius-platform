@@ -94,6 +94,7 @@ An AI-powered eBay repricing platform built with Encore.ts that optimizes produc
 - eBay Developer account
 - RapidAPI account (optional, for enhanced market data)
 - Google Gemini API Key
+- Google Vision API Key
 
 ## 🚀 Quick Start
 
@@ -125,6 +126,7 @@ encore secret set EbayRedirectUri
 encore secret set RapidApiKey
 encore secret set SentryDSN
 encore secret set GeminiApiKey
+encore secret set GoogleVisionApiKey
 ```
 
 ### 4. Configure Frontend

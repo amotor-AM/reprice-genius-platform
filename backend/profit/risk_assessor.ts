@@ -2,6 +2,7 @@ import { api, APIError } from "encore.dev/api";
 import { getAuthData } from "~encore/auth";
 import { profitDB } from "./db";
 import { runMonteCarloSimulation } from "./models/monte_carlo";
+import { listingsDB } from "../listings/db";
 
 export interface AssessRiskRequest {
   listingId: string;
@@ -25,11 +26,22 @@ export interface AssessRiskResponse {
 export const assessRisk = api<AssessRiskRequest, AssessRiskResponse>(
   { auth: true, expose: true, method: "POST", path: "/profit/risk/assess" },
   async (req) => {
+    // Get competitor data for simulation
+    const competitors = await listingsDB.queryAll`
+      SELECT p.id, ml.current_price as price
+      FROM products p
+      JOIN marketplace_listings ml ON p.id = ml.product_id
+      WHERE p.category_id = (SELECT category_id FROM products WHERE id = ${req.listingId})
+        AND p.id != ${req.listingId}
+      LIMIT 10
+    `;
+
     // Run Monte Carlo simulation to assess risk
     const simulationResult = await runMonteCarloSimulation({
       listingId: req.listingId,
       priceChangePercent: req.priceChangePercent,
       simulations: 10000,
+      competitors,
     });
 
     // Calculate Value at Risk (VaR) from simulation results

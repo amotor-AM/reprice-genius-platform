@@ -7,7 +7,7 @@ import {
   lowJobQueue, 
   JobPayload 
 } from "./queues";
-import { orchestrator, market, analytics, learning, ml } from "~encore/clients";
+import { orchestrator, market, analytics, learning, ml, pipeline } from "~encore/clients";
 
 // Generic job processor
 async function processJob(event: JobPayload) {
@@ -26,19 +26,13 @@ async function processJob(event: JobPayload) {
         await orchestrator.repriceAll(payload);
         break;
       case 'market_data_sync':
-        // This would call a new endpoint in market service to sync all categories
-        // For now, let's assume it exists.
-        // await market.syncAllData(payload);
-        console.log("Simulating market data sync", payload);
+        await market.syncAllData(payload);
         break;
       case 'generate_daily_report':
-        // This would call a new endpoint in analytics service
-        // await analytics.generateReport(payload);
-        console.log("Simulating report generation", payload);
+        await analytics.generateReport(payload);
         break;
       case 'data_cleanup':
-        // This would call a new endpoint in a maintenance service
-        console.log("Simulating data cleanup", payload);
+        await pipeline.runCleanupJob(payload);
         break;
       case 'monitor_failed_jobs':
         await monitorFailedJobs();

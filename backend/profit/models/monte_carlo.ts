@@ -1,9 +1,10 @@
-// This file contains the logic for Monte Carlo simulations.
+import { behavior } from "~encore/clients";
 
 export async function runMonteCarloSimulation(params: {
   listingId: string;
   priceChangePercent: number;
   simulations: number;
+  competitors: Array<{ id: string; price: number }>;
 }) {
   const outcomes: number[] = [];
   let profitableSimulations = 0;
@@ -11,9 +12,22 @@ export async function runMonteCarloSimulation(params: {
   for (let i = 0; i < params.simulations; i++) {
     // Simulate market variables with randomness
     const demandChange = -1.2 * params.priceChangePercent + (Math.random() - 0.5) * 0.1;
-    const competitorResponse = (Math.random() - 0.5) * 0.05;
     
-    const finalPriceChange = params.priceChangePercent + competitorResponse;
+    // Simulate competitor responses
+    let competitorPriceEffect = 0;
+    for (const comp of params.competitors) {
+      const response = await behavior.predictResponse({
+        listingId: params.listingId,
+        priceChange: params.priceChangePercent,
+      });
+      const compResponse = response.competitorResponses.find(r => r.competitorId === comp.id);
+      if (compResponse && Math.random() < compResponse.confidence) {
+        competitorPriceEffect += compResponse.predictedAction;
+      }
+    }
+    competitorPriceEffect /= Math.max(1, params.competitors.length);
+    
+    const finalPriceChange = params.priceChangePercent + competitorPriceEffect;
     const finalDemandChange = demandChange * (1 + (Math.random() - 0.5) * 0.2);
 
     // Simplified profit calculation

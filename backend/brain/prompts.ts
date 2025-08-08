@@ -34,13 +34,39 @@ Respond in JSON format:
 `;
 }
 
-export async function callGeminiForExplanation(prompt: string): Promise<any> {
-  // In a real implementation, this would call the Gemini API.
-  // For now, returning mock data.
-  return {
-    summary: "The price was slightly increased to maximize profit while staying competitive.",
-    keyFactors: ["Strong demand forecast from the Intelligence service.", "ML service predicted a higher optimal price.", "Competitor prices are stable, allowing for a small increase."],
-    tradeOffs: "This decision prioritizes profit margin over maximizing immediate sales volume.",
-    confidenceAnalysis: "Confidence is high due to agreement between multiple AI services and stable market conditions."
-  };
+export async function callGeminiAPI(prompt: string): Promise<any> {
+  try {
+    const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-goog-api-key': geminiApiKey(),
+      },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: {
+          responseMimeType: "application/json",
+        },
+      }),
+    });
+
+    if (!response.ok) {
+      const errorBody = await response.text();
+      throw new Error(`Gemini API error: ${response.statusText} - ${errorBody}`);
+    }
+
+    const data = await response.json();
+    const content = data.candidates[0].content.parts[0].text;
+    
+    return JSON.parse(content);
+  } catch (error) {
+    console.error('Gemini API call failed:', error);
+    // Fallback to a structured error
+    return {
+      summary: "Could not generate explanation due to an API error.",
+      keyFactors: ["API communication failure."],
+      tradeOffs: "N/A",
+      confidenceAnalysis: "Confidence is low due to system error."
+    };
+  }
 }

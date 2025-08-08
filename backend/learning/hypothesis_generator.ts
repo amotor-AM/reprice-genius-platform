@@ -3,6 +3,7 @@ import { getAuthData } from "~encore/auth";
 import { secret } from "encore.dev/config";
 import { learningDB } from "./db";
 import { v4 as uuidv4 } from 'uuid';
+import { callGeminiAPI } from "../brain/prompts"; // Re-using the Gemini caller
 
 const geminiApiKey = secret("GeminiApiKey");
 
@@ -32,7 +33,7 @@ export const generateHypothesis = api<GenerateHypothesisRequest, GenerateHypothe
     const auth = getAuthData()!;
     
     const prompt = buildHypothesisPrompt(req);
-    const aiResponse = await callGeminiForHypotheses(prompt);
+    const aiResponse = await callGeminiAPI(prompt);
     const hypotheses = parseAIHypotheses(aiResponse);
 
     // Store generated hypotheses
@@ -71,32 +72,16 @@ Respond in the following JSON format:
 `;
 }
 
-async function callGeminiForHypotheses(prompt: string): Promise<any> {
-  // In a real implementation, this would call the Gemini API.
-  // For now, returning mock data.
-  return {
-    hypotheses: [
-      {
-        description: "Competitors have become more aggressive, causing our prices to be uncompetitive.",
-        testableAction: "Implement a 'Competitive Matching' strategy for a subset of products in this category, aiming to be 5% cheaper than the average competitor.",
-        expectedOutcome: "Sales volume will increase by at least 10%, and market share will grow.",
-        requiredMetrics: ["sales_volume", "market_share", "competitor_prices"],
-        confidence: 0.85
-      },
-      {
-        description: "The perceived value of the product has decreased due to market saturation.",
-        testableAction: "Run a promotional campaign offering a 15% discount for 2 weeks.",
-        expectedOutcome: "A short-term spike in sales and conversion rate, followed by a return to baseline.",
-        requiredMetrics: ["conversion_rate", "sales_velocity", "customer_feedback"],
-        confidence: 0.70
-      }
-    ]
-  };
-}
-
 function parseAIHypotheses(aiResponse: any): Hypothesis[] {
+  if (!aiResponse || !Array.isArray(aiResponse.hypotheses)) {
+    throw new Error("Invalid response format from AI for hypothesis generation.");
+  }
   return aiResponse.hypotheses.map((h: any) => ({
     id: uuidv4(),
-    ...h
+    description: h.description || "N/A",
+    testableAction: h.testableAction || "N/A",
+    expectedOutcome: h.expectedOutcome || "N/A",
+    requiredMetrics: h.requiredMetrics || [],
+    confidence: h.confidence || 0.5,
   }));
 }

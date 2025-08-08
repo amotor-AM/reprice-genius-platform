@@ -1,7 +1,7 @@
 import { api, APIError } from "encore.dev/api";
 import { getAuthData } from "~encore/auth";
 import { brainDB } from "./db";
-import { buildExplainPrompt, callGeminiForExplanation } from "./prompts";
+import { buildExplainPrompt, callGeminiAPI } from "./prompts";
 
 export interface ExplainDecisionResponse {
   decisionId: string;
@@ -26,7 +26,7 @@ export const explain = api<{ decisionId: string }, ExplainDecisionResponse>(
     }
 
     const prompt = buildExplainPrompt(decision);
-    const explanation = await callGeminiForExplanation(prompt);
+    const explanation = await callGeminiAPI(prompt);
 
     return {
       decisionId: req.decisionId,

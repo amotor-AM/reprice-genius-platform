@@ -23,6 +23,7 @@ export const integrateExternalSignals = api<IntegrateSignalsRequest, { success: 
       await intelDB.exec`
         INSERT INTO external_signals (signal_type, keyword, category_id, signal_data, recorded_at)
         VALUES ('google_trends', ${keyword}, ${req.categoryId}, ${JSON.stringify(trendsData)}, NOW())
+        ON CONFLICT (signal_type, keyword, category_id, recorded_at) DO NOTHING
       `;
       signalsIntegrated++;
     }
@@ -32,6 +33,7 @@ export const integrateExternalSignals = api<IntegrateSignalsRequest, { success: 
     await intelDB.exec`
       INSERT INTO external_signals (signal_type, category_id, signal_data, recorded_at)
       VALUES ('social_sentiment', ${req.categoryId}, ${JSON.stringify(socialData)}, NOW())
+      ON CONFLICT (signal_type, keyword, category_id, recorded_at) DO NOTHING
     `;
     signalsIntegrated++;
 
@@ -40,22 +42,29 @@ export const integrateExternalSignals = api<IntegrateSignalsRequest, { success: 
 );
 
 async function fetchGoogleTrends(keyword: string) {
-  // Simulate API call
+  // This would call a real Google Trends API or a scraping service.
+  // The official API is not publicly available, so this remains a detailed simulation.
+  const interest_over_time = Array.from({ length: 30 }, (_, i) => {
+    const date = new Date(Date.now() - (30 - i) * 24 * 60 * 60 * 1000);
+    const seasonalFactor = 1 + 0.3 * Math.sin(date.getMonth() * (2 * Math.PI / 12));
+    return {
+      date: date.toISOString().split('T')[0],
+      value: Math.floor(Math.random() * 40 + 30) * seasonalFactor,
+    };
+  });
+
   return {
-    interest_over_time: Array.from({ length: 30 }, (_, i) => ({
-      date: new Date(Date.now() - (30 - i) * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-      value: Math.floor(Math.random() * 50) + 50,
-    })),
+    interest_over_time,
     related_queries: [{ query: `${keyword} review`, value: 100 }, { query: `best ${keyword}`, value: 95 }],
   };
 }
 
 async function fetchSocialSentiment(categoryId: string) {
-  // Simulate API call
+  // This would call a social media listening API (e.g., Brandwatch, Sprinklr).
   return {
     sentiment_score: Math.random() * 0.4 + 0.3, // 0.3 to 0.7
     positive_mentions: Math.floor(Math.random() * 1000),
     negative_mentions: Math.floor(Math.random() * 500),
-    trending_topics: ['new_feature', 'customer_service'],
+    trending_topics: ['new_feature', 'customer_service', 'shipping_times'],
   };
 }

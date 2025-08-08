@@ -1,5 +1,7 @@
-// This is a simulated BERT model for text analysis.
-// In a real implementation, this would use a library like Hugging Face Transformers.
+import { secret } from "encore.dev/config";
+import { callGeminiAPI } from "../../brain/prompts";
+
+const geminiApiKey = secret("GeminiApiKey");
 
 export interface BertAnalysis {
   sentiment: 'positive' | 'negative' | 'neutral';
@@ -11,26 +13,34 @@ export interface BertAnalysis {
 }
 
 export async function analyzeTextWithBert(text: string): Promise<BertAnalysis> {
-  // Simulate API call to a BERT model service
-  await new Promise(resolve => setTimeout(resolve, 150));
+  const prompt = `
+    Analyze the following text for sentiment, keywords, and clarity.
+    Text: "${text}"
+    
+    Respond in the following JSON format:
+    {
+      "sentiment": "positive" | "negative" | "neutral",
+      "sentimentScore": a number between -1 and 1,
+      "keywords": ["keyword1", "keyword2"],
+      "clarityScore": a number between 0 and 1,
+      "seoScore": a number between 0 and 1
+    }
+  `;
 
-  const sentimentScore = (Math.random() - 0.5) * 2; // -1 to 1
-  const sentiment = sentimentScore > 0.3 ? 'positive' : sentimentScore < -0.3 ? 'negative' : 'neutral';
+  const aiResponse = await callGeminiAPI(prompt);
 
-  const words = text.toLowerCase().split(/\s+/).filter(w => w.length > 3);
-  const keywords = [...new Set(words)].slice(0, 10);
-  
+  const keywords = aiResponse.keywords || [];
   const keywordEffectiveness: Record<string, number> = {};
-  keywords.forEach(kw => {
-    keywordEffectiveness[kw] = Math.random();
+  keywords.forEach((kw: string) => {
+    keywordEffectiveness[kw] = Math.random() * 0.5 + 0.5; // Assign random effectiveness
   });
 
   return {
-    sentiment,
-    sentimentScore,
+    sentiment: aiResponse.sentiment || 'neutral',
+    sentimentScore: aiResponse.sentimentScore || 0,
     keywords,
     keywordEffectiveness,
-    clarityScore: Math.random() * 0.5 + 0.5,
-    seoScore: Math.random() * 0.6 + 0.4,
+    clarityScore: aiResponse.clarityScore || 0.5,
+    seoScore: aiResponse.seoScore || 0.5,
   };
 }
