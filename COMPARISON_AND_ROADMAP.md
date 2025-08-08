@@ -24,6 +24,7 @@ This document provides a comprehensive comparison between the existing Reprice G
 - **Deployment**: Automatic with Encore Cloud
 - **API**: Type-safe with auto-generated clients
 - **Architecture**: Event-driven with sagas for complex workflows
+- **Brain Service**: Central orchestration layer and decision engine for all AI services.
 - **AI/ML**: Cutting-edge deep learning system with multi-modal analysis and a "Product DNA" system.
 - **Learning Service**: Autonomous learning system with meta-learning, causal inference, and automated experimentation.
 - **Behavioral AI Service**: Models buyer and competitor psychology using behavioral economics and game theory.
@@ -65,6 +66,7 @@ This document provides a comprehensive comparison between the existing Reprice G
 ├── SQL Database (composed strategies, simulations)
 ├── SQL Database (proprietary data, benchmarks, synthetic data)
 ├── SQL Database (autonomous optimization jobs, experiments, reports)
+├── SQL Database (master decisions, model registry)
 ├── SQL Database (events for audit trail)
 ├── SQL Database (saga state management)
 ├── SQL Database (centralized feature store)

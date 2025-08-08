@@ -15,6 +15,7 @@ An AI-powered eBay repricing platform built with Encore.ts that optimizes produc
 - **AI Strategy Composer**: Generate complex pricing strategies from simple natural language descriptions.
 - **Proprietary Data Moat**: Creates unique data advantages through synthetic data, crowdsourcing, and network effects.
 - **Autonomous Optimization**: Self-running systems with AutoML, autonomous experimentation, and self-healing capabilities.
+- **Master Orchestration Layer (Brain)**: Central nervous system coordinating all AI services for unified decision-making.
 - **Risk Management**: Built-in safeguards and price boundaries
 - **Comprehensive Analytics**: Detailed performance tracking and insights
 - **Event-Driven Architecture**: Scalable and resilient workflows using sagas and an event bus.
@@ -30,6 +31,7 @@ An AI-powered eBay repricing platform built with Encore.ts that optimizes produc
 ## 🏗️ Architecture
 
 ### Backend Services (Encore.ts)
+- **Brain Service**: Central orchestration layer and decision engine.
 - **User Service**: User management and profiles
 - **Marketplace Service**: Abstracted integration layer for eBay, Amazon, Shopify, etc.
 - **Listings Service**: Unified product catalog and inventory management.
