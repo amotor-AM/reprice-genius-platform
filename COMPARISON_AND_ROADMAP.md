@@ -25,6 +25,7 @@ This document provides a comprehensive comparison between the existing Reprice G
 - **API**: Type-safe with auto-generated clients
 - **Architecture**: Event-driven with sagas for complex workflows
 - **AI/ML**: Advanced capabilities including Transformers, LSTMs, GNNs, and a unified AI pipeline.
+- **Data Pipeline**: Dedicated service for ETL/ELT, data lake management, and data quality.
 
 ## Detailed Feature Comparison
 
@@ -47,7 +48,8 @@ This document provides a comprehensive comparison between the existing Reprice G
 ├── SQL Database (learning feedback)
 ├── SQL Database (events for audit trail)
 ├── SQL Database (saga state management)
-└── SQL Database (centralized feature store)
+├── SQL Database (centralized feature store)
+└── SQL Database (data pipeline metadata)
 ```
 
 **Key Differences:**

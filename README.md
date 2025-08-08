@@ -16,6 +16,7 @@ An AI-powered eBay repricing platform built with Encore.ts that optimizes produc
 - **Real-time Analytics**: Live streaming of key performance indicators.
 - **Background Jobs**: Dedicated service for managing all asynchronous tasks.
 - **Advanced AI Capabilities**: Transformer models, LSTMs, GNNs, and Deep Reinforcement Learning for state-of-the-art pricing optimization.
+- **Data Pipeline**: Robust ETL/ELT pipelines with a data lake architecture for scalable data management.
 
 ## 🏗️ Architecture
 
@@ -36,6 +37,7 @@ An AI-powered eBay repricing platform built with Encore.ts that optimizes produc
 - **Orchestrator Service**: Manages complex, multi-step workflows (sagas)
 - **Jobs Service**: Manages all asynchronous background tasks and scheduled jobs
 - **Feature Store Service**: Centralized feature management for all AI models
+- **Pipeline Service**: Manages data ingestion, transformation, and quality control
 
 ### Frontend (React + TypeScript)
 - **Modern UI**: Built with React, TypeScript, and Tailwind CSS
