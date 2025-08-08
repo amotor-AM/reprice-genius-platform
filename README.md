@@ -7,7 +7,7 @@ An AI-powered eBay repricing platform built with Encore.ts that optimizes produc
 - **AI-Powered Pricing**: Advanced algorithms analyze market conditions and competitor pricing
 - **Multi-Source Analysis**: Data from eBay, Amazon, and Google Trends
 - **Real-time Updates**: Instant price adjustments based on market conditions
-- **Learning System**: Continuous improvement through feedback analysis
+- **Autonomous Learning System**: Continuous improvement through feedback analysis, meta-learning, causal inference, and automated experimentation.
 - **Risk Management**: Built-in safeguards and price boundaries
 - **Comprehensive Analytics**: Detailed performance tracking and insights
 - **Event-Driven Architecture**: Scalable and resilient workflows using sagas and an event bus.
@@ -29,7 +29,7 @@ An AI-powered eBay repricing platform built with Encore.ts that optimizes produc
 - **Orders Service**: Centralized order processing and fulfillment routing.
 - **Pricing Service**: AI-powered pricing algorithms
 - **Analytics Service**: Performance metrics, forecasting, and insights
-- **Learning Service**: Feedback processing and model improvement
+- **Learning Service**: Autonomous learning with meta-learning, causal inference, and automated experimentation.
 - **ML Service**: Multi-modal deep learning, Product DNA, and predictive modeling.
 - **Cache Service**: High-performance caching layer
 - **Monitoring Service**: Error tracking and performance monitoring

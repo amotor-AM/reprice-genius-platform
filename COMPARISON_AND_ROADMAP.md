@@ -25,6 +25,7 @@ This document provides a comprehensive comparison between the existing Reprice G
 - **API**: Type-safe with auto-generated clients
 - **Architecture**: Event-driven with sagas for complex workflows
 - **AI/ML**: Cutting-edge deep learning system with multi-modal analysis and a "Product DNA" system.
+- **Learning Service**: Autonomous learning system with meta-learning, causal inference, and automated experimentation.
 - **Data Pipeline**: Dedicated service for ETL/ELT, data lake management, and data quality.
 - **Multi-Marketplace**: Abstracted marketplace service with adapters for eBay, Amazon, Shopify, etc.
 - **AI Copilot**: Natural language interface for platform control and conversational AI.
@@ -49,7 +50,7 @@ This document provides a comprehensive comparison between the existing Reprice G
 ├── SQL Database (orders)
 ├── SQL Database (pricing decisions)
 ├── SQL Database (analytics)
-├── SQL Database (learning feedback)
+├── SQL Database (learning feedback, experiments, causal graphs, meta-learning)
 ├── SQL Database (events for audit trail)
 ├── SQL Database (saga state management)
 ├── SQL Database (centralized feature store)
