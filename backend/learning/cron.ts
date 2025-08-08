@@ -1,11 +1,11 @@
-import { cron } from "encore.dev/cron";
+import { api } from "encore.dev/api";
 import { learningDB } from "./db";
 import { learningTopic } from "../events/topics";
 
-// Cron job to check for completed experiments every hour
-export const checkCompletedExperiments = cron("check-experiments", {
-  every: "1h",
-  handler: async () => {
+// Internal API to check for completed experiments
+export const checkCompletedExperiments = api<void, { completed: number }>(
+  { method: "POST", path: "/learning/internal/check-experiments" },
+  async () => {
     const completedExperiments = await learningDB.queryAll`
       UPDATE pricing_experiments
       SET status = 'completed'
@@ -23,5 +23,6 @@ export const checkCompletedExperiments = cron("check-experiments", {
         timestamp: new Date(),
       });
     }
+    return { completed: completedExperiments.length };
   },
-});
+);

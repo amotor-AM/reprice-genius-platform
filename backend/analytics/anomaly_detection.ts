@@ -1,4 +1,3 @@
-import { cron } from "encore.dev/cron";
 import { api, APIError } from "encore.dev/api";
 import { getAuthData } from "~encore/auth";
 import { analyticsDB } from "./db";
@@ -14,10 +13,11 @@ export interface Anomaly {
   status: string;
 }
 
-// Cron job to detect price anomalies every hour.
-export const detectPriceAnomalies = cron("detect-anomalies", {
-  every: "1h",
-  handler: async () => {
+// Internal API to be called by the jobs service.
+export const detectPriceAnomalies = api<void, { detected: number }>(
+  { method: "POST", path: "/analytics/internal/detect-anomalies" },
+  async () => {
+    let detectedCount = 0;
     // Get recent price changes
     const recentChanges = await ebayDB.queryAll`
       SELECT 
@@ -35,6 +35,7 @@ export const detectPriceAnomalies = cron("detect-anomalies", {
                   'Price changed from $${change.old_price} to $${change.new_price}', 
                   ${change.magnitude})
         `;
+        detectedCount++;
       }
     }
 
@@ -55,9 +56,11 @@ export const detectPriceAnomalies = cron("detect-anomalies", {
                 ${listing.change_count})
         ON CONFLICT (listing_id, anomaly_type) DO NOTHING
       `;
+      detectedCount++;
     }
-  },
-});
+    return { detected: detectedCount };
+  }
+);
 
 // Retrieves detected price anomalies.
 export const getAnomalies = api<{ status?: string }, { anomalies: Anomaly[] }>(
