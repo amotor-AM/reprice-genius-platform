@@ -1,7 +1,7 @@
 import { api } from "encore.dev/api";
 import { Topic, Subscription } from "encore.dev/pubsub";
 import { getAuthData } from "~encore/auth";
-import { ebayDB } from "../ebay/db";
+import { listingsDB } from "../listings/db";
 import { userDB } from "../user/db";
 
 export interface PriceAlertEvent {
@@ -34,8 +34,10 @@ async function sendPriceAlertNotification(event: PriceAlertEvent) {
     SELECT email FROM users WHERE id = ${event.userId}
   `;
 
-  const listing = await ebayDB.queryRow`
-    SELECT title FROM listings WHERE id = ${event.listingId}
+  const listing = await listingsDB.queryRow`
+    SELECT p.title FROM products p
+    JOIN marketplace_listings ml ON p.id = ml.product_id
+    WHERE ml.id = ${event.listingId}
   `;
 
   if (!user || !listing) {
@@ -67,8 +69,8 @@ export const createAlert = api<CreateAlertRequest, CreateAlertResponse>(
     const auth = getAuthData()!;
 
     // Verify listing ownership
-    const listing = await ebayDB.queryRow`
-      SELECT id FROM listings WHERE id = ${req.listingId} AND user_id = ${auth.userID}
+    const listing = await listingsDB.queryRow`
+      SELECT id FROM marketplace_listings WHERE id = ${req.listingId} AND user_id = ${auth.userID}
     `;
 
     if (!listing) {

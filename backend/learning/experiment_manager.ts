@@ -1,7 +1,7 @@
 import { api, APIError } from "encore.dev/api";
 import { getAuthData } from "~encore/auth";
 import { learningDB } from "./db";
-import { ebayDB } from "../ebay/db";
+import { listingsDB } from "../listings/db";
 
 export interface CreateExperimentRequest {
   name: string;
@@ -275,21 +275,23 @@ export const listExperiments = api<void, { experiments: ExperimentStatus[] }>(
 );
 
 async function findEligibleListings(userId: string, categoryId?: string, brandId?: string): Promise<string[]> {
-  let whereClause = "WHERE user_id = $1 AND listing_status = 'active'";
+  let whereClause = "WHERE p.user_id = $1 AND ml.status = 'active'";
   const params: any[] = [userId];
 
   if (categoryId) {
-    whereClause += " AND category_id = $2";
+    whereClause += " AND p.category_id = $2";
     params.push(categoryId);
   }
 
   if (brandId) {
-    whereClause += ` AND ${params.length === 1 ? '$2' : '$3'} = ANY(string_to_array(title, ' '))`;
+    whereClause += ` AND p.brand = $${params.length + 1}`;
     params.push(brandId);
   }
 
-  const listings = await ebayDB.rawQueryAll(
-    `SELECT id FROM listings ${whereClause} ORDER BY views DESC LIMIT 1000`,
+  const listings = await listingsDB.rawQueryAll(
+    `SELECT p.id FROM products p
+     JOIN marketplace_listings ml ON p.id = ml.product_id
+     ${whereClause} ORDER BY ml.created_at DESC LIMIT 1000`,
     ...params
   );
 

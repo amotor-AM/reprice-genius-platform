@@ -1,6 +1,6 @@
 import { api, APIError } from "encore.dev/api";
 import { getAuthData } from "~encore/auth";
-import { ebayDB } from "../ebay/db";
+import { listingsDB } from "../listings/db";
 import { getCachedOrCompute } from "./cache";
 import { aggregateCategoryData } from "./data_aggregator";
 
@@ -20,8 +20,8 @@ export const getDemand = api<{ productId: string }, DemandSignals>(
   async ({ productId }) => {
     const auth = getAuthData()!;
 
-    const listing = await ebayDB.queryRow`
-      SELECT * FROM listings WHERE id = ${productId} AND user_id = ${auth.userID}
+    const listing = await listingsDB.queryRow`
+      SELECT * FROM products WHERE id = ${productId} AND user_id = ${auth.userID}
     `;
 
     if (!listing) {
@@ -33,9 +33,9 @@ export const getDemand = api<{ productId: string }, DemandSignals>(
       
       return {
         searchVolume: marketData.googleTrends.searchVolume,
-        salesVelocity: listing.sold_quantity / 30, // Simplified
-        watchers: listing.watchers,
-        views: listing.views,
+        salesVelocity: 0, // Mocked
+        watchers: 0, // Mocked
+        views: 0, // Mocked
         seasonalFactor: 1.1, // From trends data
         demandTrend: marketData.googleTrends.trend,
       };

@@ -1,7 +1,7 @@
 import { api, APIError } from "encore.dev/api";
 import { getAuthData } from "~encore/auth";
 import { learningDB } from "./db";
-import { ebayDB } from "../ebay/db";
+import { listingsDB } from "../listings/db";
 
 export interface DetectPatternsRequest {
   categoryId?: string;
@@ -157,7 +157,7 @@ async function detectSeasonalPatterns(
   const params: any[] = [timeRangeStart, timeRangeEnd];
 
   if (categoryId) {
-    whereClause += " AND l.category_id = $3";
+    whereClause += " AND p.category_id = $3";
     params.push(categoryId);
   }
 
@@ -169,7 +169,7 @@ async function detectSeasonalPatterns(
        COUNT(*) as sample_size,
        STDDEV(po.new_price / po.old_price) as price_ratio_stddev
      FROM pricing_outcomes po
-     JOIN listings l ON po.listing_id = l.id
+     JOIN products p ON po.listing_id = p.id
      ${whereClause}
      GROUP BY EXTRACT(MONTH FROM po.applied_at)
      HAVING COUNT(*) >= ${minSampleSize || 10}
@@ -235,7 +235,7 @@ async function detectCompetitorResponsePatterns(
   const params: any[] = [timeRangeStart, timeRangeEnd];
 
   if (categoryId) {
-    whereClause += " AND l.category_id = $3";
+    whereClause += " AND p.category_id = $3";
     params.push(categoryId);
   }
 
@@ -245,7 +245,7 @@ async function detectCompetitorResponsePatterns(
        po.price_change_percent,
        po.applied_at
      FROM pricing_outcomes po
-     JOIN listings l ON po.listing_id = l.id
+     JOIN products p ON po.listing_id = p.id
      ${whereClause}`,
     ...params
   );
@@ -298,7 +298,7 @@ async function detectDemandSpikePatterns(
   const params: any[] = [timeRangeStart, timeRangeEnd];
 
   if (categoryId) {
-    whereClause += " AND l.category_id = $3";
+    whereClause += " AND p.category_id = $3";
     params.push(categoryId);
   }
 
@@ -311,7 +311,7 @@ async function detectDemandSpikePatterns(
        EXTRACT(DOW FROM po.applied_at) as day_of_week,
        EXTRACT(HOUR FROM po.applied_at) as hour_of_day
      FROM pricing_outcomes po
-     JOIN listings l ON po.listing_id = l.id
+     JOIN products p ON po.listing_id = p.id
      ${whereClause}
      ORDER BY po.applied_at`,
     ...params
@@ -390,7 +390,7 @@ async function detectPriceElasticityPatterns(
   const params: any[] = [timeRangeStart, timeRangeEnd];
 
   if (categoryId) {
-    whereClause += " AND l.category_id = $3";
+    whereClause += " AND p.category_id = $3";
     params.push(categoryId);
   }
 
@@ -401,7 +401,7 @@ async function detectPriceElasticityPatterns(
        po.conversion_rate_after - po.conversion_rate_before as conversion_change,
        ABS(po.price_change_percent) as abs_price_change
      FROM pricing_outcomes po
-     JOIN listings l ON po.listing_id = l.id
+     JOIN products p ON po.listing_id = p.id
      ${whereClause}
      ORDER BY po.price_change_percent`,
     ...params

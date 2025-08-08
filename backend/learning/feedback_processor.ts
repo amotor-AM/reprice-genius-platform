@@ -3,7 +3,7 @@ import { getAuthData } from "~encore/auth";
 import { Topic, Subscription } from "encore.dev/pubsub";
 import { learningDB } from "./db";
 import { pricingDB } from "../pricing/db";
-import { ebayDB } from "../ebay/db";
+import { listingsDB } from "../listings/db";
 import { graphDB } from "../graph/db";
 
 export interface FeedbackEvent {
@@ -67,8 +67,8 @@ export const recordFeedback = api<RecordFeedbackRequest, RecordFeedbackResponse>
 
     try {
       // Verify listing ownership
-      const listing = await ebayDB.queryRow`
-        SELECT * FROM listings WHERE id = ${req.listingId} AND user_id = ${auth.userID}
+      const listing = await listingsDB.queryRow`
+        SELECT * FROM products WHERE id = ${req.listingId} AND user_id = ${auth.userID}
       `;
 
       if (!listing) {
@@ -79,10 +79,10 @@ export const recordFeedback = api<RecordFeedbackRequest, RecordFeedbackResponse>
       let pricingDecision = null;
       if (req.decisionId) {
         pricingDecision = await pricingDB.queryRow`
-          SELECT pd.*, l.user_id
+          SELECT pd.*, ml.user_id
           FROM pricing_decisions pd
-          JOIN listings l ON pd.listing_id = l.id
-          WHERE pd.id = ${req.decisionId} AND l.user_id = ${auth.userID}
+          JOIN marketplace_listings ml ON pd.listing_id = ml.id
+          WHERE pd.id = ${req.decisionId} AND ml.user_id = ${auth.userID}
         `;
 
         if (!pricingDecision) {
@@ -113,8 +113,8 @@ export const recordFeedback = api<RecordFeedbackRequest, RecordFeedbackResponse>
         ) VALUES (
           ${req.decisionId}, ${req.experimentId}, ${req.listingId}, 
           ${getStrategyIdFromExperiment(req.experimentId, req.listingId)},
-          ${pricingDecision?.old_price || listing.original_price},
-          ${pricingDecision?.suggested_price || listing.current_price},
+          ${pricingDecision?.old_price || 0},
+          ${pricingDecision?.suggested_price || 0},
           ${pricingDecision ? ((pricingDecision.suggested_price - pricingDecision.old_price) / pricingDecision.old_price) * 100 : 0},
           ${pricingDecision?.applied_at || new Date()},
           ${req.metrics.salesBefore}, ${req.metrics.salesAfter},
@@ -166,9 +166,9 @@ async function processFeedbackEvent(event: FeedbackEvent) {
   try {
     // Find recent pricing decisions for this listing
     const recentDecisions = await pricingDB.queryAll`
-      SELECT pd.*, l.user_id
+      SELECT pd.*, ml.user_id
       FROM pricing_decisions pd
-      JOIN listings l ON pd.listing_id = l.id
+      JOIN marketplace_listings ml ON pd.listing_id = ml.id
       WHERE pd.listing_id = ${event.listingId}
         AND pd.applied = true
         AND pd.applied_at >= ${new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)} -- Last 7 days

@@ -1,7 +1,7 @@
 import { api, APIError } from "encore.dev/api";
 import { getAuthData } from "~encore/auth";
 import { strategyDB } from "./db";
-import { ebayDB } from "../ebay/db";
+import { listingsDB } from "../listings/db";
 
 export interface BacktestConfig {
   strategyId: string;
@@ -155,7 +155,7 @@ async function getStrategyForBacktest(strategyId: string, userId: string): Promi
 
 async function getHistoricalData(config: BacktestConfig, userId: string): Promise<any[]> {
   let whereClause = `
-    WHERE l.user_id = $1 
+    WHERE p.user_id = $1 
     AND ph.created_at >= $2 
     AND ph.created_at <= $3
   `;
@@ -163,30 +163,29 @@ async function getHistoricalData(config: BacktestConfig, userId: string): Promis
 
   // Apply product filters
   if (config.productFilters?.categories && config.productFilters.categories.length > 0) {
-    whereClause += ` AND l.category_id = ANY($${params.length + 1})`;
+    whereClause += ` AND p.category_id = ANY($${params.length + 1})`;
     params.push(config.productFilters.categories);
   }
 
   if (config.productFilters?.priceRange) {
-    whereClause += ` AND l.current_price >= $${params.length + 1} AND l.current_price <= $${params.length + 2}`;
+    whereClause += ` AND ml.current_price >= $${params.length + 1} AND ml.current_price <= $${params.length + 2}`;
     params.push(config.productFilters.priceRange.min, config.productFilters.priceRange.max);
   }
 
-  const historicalData = await strategyDB.rawQueryAll(`
+  const historicalData = await listingsDB.rawQueryAll(`
     SELECT 
-      l.id as listing_id,
-      l.title,
-      l.category_id,
-      l.current_price,
+      p.id as product_id,
+      ml.id as marketplace_listing_id,
+      p.title,
+      p.category_id,
+      ml.current_price,
       ph.old_price,
       ph.new_price,
       ph.created_at,
-      ph.reason,
-      l.views,
-      l.watchers,
-      l.sold_quantity
-    FROM listings l
-    JOIN price_history ph ON l.id = ph.listing_id
+      ph.reason
+    FROM products p
+    JOIN marketplace_listings ml ON p.id = ml.product_id
+    JOIN price_history ph ON ml.id = ph.marketplace_listing_id
     ${whereClause}
     ORDER BY ph.created_at ASC
   `, ...params);
@@ -241,7 +240,7 @@ async function runBacktestSimulation(
 
         tradeHistory.push({
           date: new Date(date),
-          productId: trade.listing_id,
+          productId: trade.product_id,
           action: decision.action,
           oldPrice: trade.old_price,
           newPrice: decision.newPrice,
@@ -348,7 +347,7 @@ function simulateStrategyDecision(strategy: any, trade: any, config: BacktestCon
       break;
       
     case 'profit_maximization':
-      if (trade.views > 50 && trade.watchers > 5) {
+      if ((trade.properties as any)?.views > 50 && (trade.properties as any)?.watchers > 5) {
         shouldTrade = true;
         newPrice = currentPrice * 1.05; // 5% increase
         action = 'price_change';
@@ -357,7 +356,7 @@ function simulateStrategyDecision(strategy: any, trade: any, config: BacktestCon
       break;
       
     case 'volume_optimization':
-      if (trade.sold_quantity === 0 && trade.views > 20) {
+      if ((trade.properties as any)?.sold_quantity === 0 && (trade.properties as any)?.views > 20) {
         shouldTrade = true;
         newPrice = currentPrice * 0.95; // 5% decrease
         action = 'price_change';

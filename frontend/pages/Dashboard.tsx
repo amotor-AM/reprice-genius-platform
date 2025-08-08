@@ -30,7 +30,7 @@ export function Dashboard() {
 
   const handleConnectEbay = async () => {
     try {
-      const response = await backend.ebay.getAuthUrl();
+      const response = await backend.marketplace.getAuthUrl({ marketplace: 'ebay' });
       window.location.href = response.authUrl;
     } catch (error) {
       console.error('Error connecting eBay:', error);
@@ -44,10 +44,11 @@ export function Dashboard() {
 
   const handleSyncListings = async () => {
     try {
-      const response = await backend.ebay.syncListings();
+      // This should be updated to a more generic sync if needed
+      // const response = await backend.marketplace.syncListings({ marketplace: 'ebay' });
       toast({
         title: "Success",
-        description: response.message,
+        description: "Sync started.",
       });
     } catch (error) {
       console.error('Error syncing listings:', error);

@@ -1,7 +1,7 @@
 import { api, APIError } from "encore.dev/api";
 import { getAuthData } from "~encore/auth";
 import { learningDB } from "./db";
-import { ebayDB } from "../ebay/db";
+import { listingsDB } from "../listings/db";
 
 export interface StrategyRecommendationRequest {
   listingId?: string;
@@ -107,22 +107,22 @@ export const getRecommendedStrategy = api<StrategyRecommendationRequest, Strateg
 
 async function analyzeMarketContext(categoryId?: string, brandId?: string) {
   // Analyze current market conditions
-  let whereClause = "WHERE listing_status = 'active'";
+  let whereClause = "WHERE ml.status = 'active'";
   const params: any[] = [];
 
   if (categoryId) {
-    whereClause += " AND category_id = $1";
+    whereClause += " AND p.category_id = $1";
     params.push(categoryId);
   }
 
-  const marketData = await ebayDB.rawQueryRow(
+  const marketData = await listingsDB.rawQueryRow(
     `SELECT 
        COUNT(*) as total_listings,
-       AVG(current_price) as avg_price,
-       STDDEV(current_price) as price_stddev,
-       AVG(views) as avg_views,
-       AVG(watchers) as avg_watchers
-     FROM listings ${whereClause}`,
+       AVG(ml.current_price) as avg_price,
+       STDDEV(ml.current_price) as price_stddev
+     FROM marketplace_listings ml
+     JOIN products p ON ml.product_id = p.id
+     ${whereClause}`,
     ...params
   );
 

@@ -4,7 +4,7 @@ import { documentsBucket, exportsBucket } from "./storage";
 import { documentsDB } from "./db";
 import { csvImportTopic } from "./queues";
 import { Subscription } from "encore.dev/pubsub";
-import { ebayDB } from "../ebay/db";
+import { listingsDB } from "../listings/db";
 
 export interface ImportCsvRequest {
   file: string; // base64 encoded
@@ -83,17 +83,18 @@ export const exportCsv = api<ExportCsvRequest, ExportCsvResponse>(
 
     switch (req.exportType) {
       case 'listings':
-        data = await ebayDB.queryAll`
-          SELECT * FROM listings WHERE user_id = ${auth.userID}
+        data = await listingsDB.queryAll`
+          SELECT * FROM marketplace_listings WHERE user_id = ${auth.userID}
         `;
         headers = Object.keys(data[0] || {});
         break;
       case 'sales_history':
-        data = await ebayDB.queryAll`
-          SELECT l.title, ph.* 
+        data = await listingsDB.queryAll`
+          SELECT p.title, ph.* 
           FROM price_history ph
-          JOIN listings l ON ph.listing_id = l.id
-          WHERE l.user_id = ${auth.userID}
+          JOIN marketplace_listings ml ON ph.marketplace_listing_id = ml.id
+          JOIN products p ON ml.product_id = p.id
+          WHERE ml.user_id = ${auth.userID}
         `;
         headers = Object.keys(data[0] || {});
         break;
@@ -154,11 +155,15 @@ new Subscription(csvImportTopic, "process-csv-import", {
         }, {} as Record<string, any>);
 
         // Process row data (e.g., update listings)
-        // This is a simplified example
-        await ebayDB.exec`
-          UPDATE listings SET current_price = ${parseFloat(rowData.price)}
-          WHERE ebay_item_id = ${rowData.sku} AND user_id = ${event.userId}
+        const product = await listingsDB.queryRow`
+            SELECT id FROM products WHERE sku = ${rowData.sku} AND user_id = ${event.userId}
         `;
+        if (product) {
+            await listingsDB.exec`
+                UPDATE marketplace_listings SET current_price = ${parseFloat(rowData.price)}
+                WHERE product_id = ${product.id}
+            `;
+        }
         
         processedRows++;
       }

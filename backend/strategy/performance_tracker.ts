@@ -1,7 +1,7 @@
 import { api, APIError } from "encore.dev/api";
 import { getAuthData } from "~encore/auth";
 import { strategyDB } from "./db";
-import { ebayDB } from "../ebay/db";
+import { listingsDB } from "../listings/db";
 
 export interface StrategyPerformanceMetrics {
   strategyId: string;
@@ -88,7 +88,7 @@ async function getStrategyMetrics(
   timeRange: { startDate: Date; endDate: Date }
 ): Promise<StrategyPerformanceMetrics[]> {
   let whereClause = `
-    WHERE l.user_id = $1 
+    WHERE ml.user_id = $1 
     AND ss.created_at >= $2 
     AND ss.created_at <= $3
     AND ss.applied = true
@@ -101,7 +101,7 @@ async function getStrategyMetrics(
   }
 
   if (req.categoryId) {
-    whereClause += ` AND l.category_id = $${params.length + 1}`;
+    whereClause += ` AND p.category_id = $${params.length + 1}`;
     params.push(req.categoryId);
   }
 
@@ -118,9 +118,10 @@ async function getStrategyMetrics(
       AVG(po.outcome_score) as avg_outcome_score,
       STDDEV(po.outcome_score) as outcome_volatility
     FROM strategy_selections ss
-    JOIN listings l ON ss.listing_id = l.id
+    JOIN marketplace_listings ml ON ss.listing_id = ml.id
+    JOIN products p ON ml.product_id = p.id
     LEFT JOIN pricing_strategies ps ON ss.selected_strategy_id = ps.id
-    LEFT JOIN pricing_outcomes po ON l.id = po.listing_id 
+    LEFT JOIN pricing_outcomes po ON ml.id = po.listing_id 
       AND po.applied_at >= ss.applied_at
       AND po.applied_at <= ss.applied_at + INTERVAL '7 days'
     ${whereClause}

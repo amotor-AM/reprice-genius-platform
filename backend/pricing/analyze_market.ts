@@ -1,7 +1,7 @@
 import { api, APIError } from "encore.dev/api";
 import { getAuthData } from "~encore/auth";
 import { pricingDB } from "./db";
-import { ebayDB } from "../ebay/db";
+import { listingsDB } from "../listings/db";
 import { secret } from "encore.dev/config";
 
 const rapidApiKey = secret("RapidApiKey");
@@ -38,28 +38,36 @@ export const analyzeMarket = api<MarketAnalysisRequest, MarketAnalysisResponse>(
     const auth = getAuthData()!;
 
     // Get listing details
-    const listing = await ebayDB.queryRow`
-      SELECT * FROM listings 
+    const product = await listingsDB.queryRow`
+      SELECT * FROM products 
       WHERE id = ${req.listingId} AND user_id = ${auth.userID}
     `;
 
-    if (!listing) {
-      throw APIError.notFound("Listing not found");
+    if (!product) {
+      throw APIError.notFound("Product not found");
+    }
+
+    const marketplaceListing = await listingsDB.queryRow`
+      SELECT * FROM marketplace_listings WHERE product_id = ${product.id} ORDER BY created_at DESC LIMIT 1
+    `;
+
+    if (!marketplaceListing) {
+      throw APIError.notFound("No marketplace listing found for this product");
     }
 
     try {
       // Analyze multiple data sources
       const [ebayData, amazonData, googleTrendsData] = await Promise.allSettled([
-        analyzeEbayMarket(listing.title),
-        analyzeAmazonMarket(listing.title),
-        analyzeGoogleTrends(listing.title),
+        analyzeEbayMarket(product.title),
+        analyzeAmazonMarket(product.title),
+        analyzeGoogleTrends(product.title),
       ]);
 
       // Combine market data
       const marketFactors = combineMarketData(ebayData, amazonData, googleTrendsData);
       
       // Apply pricing algorithm
-      const pricingResult = calculateOptimalPrice(listing, marketFactors);
+      const pricingResult = calculateOptimalPrice(product, marketplaceListing, marketFactors);
 
       // Store pricing decision
       await pricingDB.exec`
@@ -67,7 +75,7 @@ export const analyzeMarket = api<MarketAnalysisRequest, MarketAnalysisResponse>(
           listing_id, model_id, old_price, suggested_price, confidence_score,
           reasoning, market_factors, created_at
         ) VALUES (
-          ${req.listingId}, 'hybrid_v1', ${listing.current_price}, 
+          ${marketplaceListing.id}, 'hybrid_v1', ${marketplaceListing.current_price}, 
           ${pricingResult.suggestedPrice}, ${pricingResult.confidence},
           ${JSON.stringify(pricingResult.reasoning)}, 
           ${JSON.stringify(marketFactors)}, CURRENT_TIMESTAMP
@@ -76,7 +84,7 @@ export const analyzeMarket = api<MarketAnalysisRequest, MarketAnalysisResponse>(
 
       return {
         listingId: req.listingId,
-        currentPrice: listing.current_price,
+        currentPrice: marketplaceListing.current_price,
         suggestedPrice: pricingResult.suggestedPrice,
         confidence: pricingResult.confidence,
         reasoning: pricingResult.reasoning,
@@ -163,11 +171,12 @@ function combineMarketData(ebayData: any, amazonData: any, googleTrendsData: any
   };
 }
 
-function calculateOptimalPrice(listing: any, marketFactors: any) {
+function calculateOptimalPrice(product: any, listing: any, marketFactors: any) {
   const currentPrice = listing.current_price;
-  const targetMargin = listing.target_profit_margin || 0.15;
-  const minPrice = listing.min_price || currentPrice * 0.7;
-  const maxPrice = listing.max_price || currentPrice * 1.5;
+  const properties = product.properties as any;
+  const targetMargin = properties?.target_profit_margin || 0.15;
+  const minPrice = properties?.min_price || currentPrice * 0.7;
+  const maxPrice = properties?.max_price || currentPrice * 1.5;
 
   // Base price on market average
   let suggestedPrice = marketFactors.avgCompetitorPrice;

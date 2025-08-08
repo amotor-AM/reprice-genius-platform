@@ -26,6 +26,7 @@ This document provides a comprehensive comparison between the existing Reprice G
 - **Architecture**: Event-driven with sagas for complex workflows
 - **AI/ML**: Advanced capabilities including Transformers, LSTMs, GNNs, and a unified AI pipeline.
 - **Data Pipeline**: Dedicated service for ETL/ELT, data lake management, and data quality.
+- **Multi-Marketplace**: Abstracted marketplace service with adapters for eBay, Amazon, Shopify, etc.
 
 ## Detailed Feature Comparison
 
@@ -42,7 +43,9 @@ This document provides a comprehensive comparison between the existing Reprice G
 #### New Implementation
 ```
 ├── SQL Database (user data)
-├── SQL Database (eBay listings)
+├── SQL Database (unified listings & inventory)
+├── SQL Database (marketplace connections)
+├── SQL Database (orders)
 ├── SQL Database (pricing decisions)
 ├── SQL Database (analytics)
 ├── SQL Database (learning feedback)
@@ -59,6 +62,7 @@ This document provides a comprehensive comparison between the existing Reprice G
 - **Performance**: Encore's optimized connection pooling and query optimization
 - **Event Sourcing**: Built-in audit trail for all domain events.
 - **Centralized Feature Store**: Unified feature management for all AI models.
+- **Unified Listing Model**: Centralized product catalog with marketplace-specific extensions.
 
 ### 2. Authentication & Authorization
 

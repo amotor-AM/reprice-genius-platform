@@ -1,7 +1,7 @@
 import { api, APIError } from "encore.dev/api";
 import { getAuthData } from "~encore/auth";
 import { analyticsDB } from "./db";
-import { ebayDB } from "../ebay/db";
+import { listingsDB } from "../listings/db";
 
 export interface Anomaly {
   id: number;
@@ -19,9 +19,9 @@ export const detectPriceAnomalies = api<void, { detected: number }>(
   async () => {
     let detectedCount = 0;
     // Get recent price changes
-    const recentChanges = await ebayDB.queryAll`
+    const recentChanges = await listingsDB.queryAll`
       SELECT 
-        listing_id, old_price, new_price, 
+        marketplace_listing_id, old_price, new_price, 
         (new_price - old_price) / old_price as magnitude
       FROM price_history
       WHERE created_at >= NOW() - INTERVAL '1 hour'
@@ -31,7 +31,7 @@ export const detectPriceAnomalies = api<void, { detected: number }>(
       if (Math.abs(change.magnitude) > 0.5) { // > 50% change
         await analyticsDB.exec`
           INSERT INTO price_anomalies (listing_id, anomaly_type, description, magnitude)
-          VALUES (${change.listing_id}, 'sudden_change', 
+          VALUES (${change.marketplace_listing_id}, 'sudden_change', 
                   'Price changed from $${change.old_price} to $${change.new_price}', 
                   ${change.magnitude})
         `;
@@ -40,18 +40,18 @@ export const detectPriceAnomalies = api<void, { detected: number }>(
     }
 
     // Detect high volatility
-    const volatileListings = await ebayDB.queryAll`
-      SELECT listing_id, COUNT(*) as change_count
+    const volatileListings = await listingsDB.queryAll`
+      SELECT marketplace_listing_id, COUNT(*) as change_count
       FROM price_history
       WHERE created_at >= NOW() - INTERVAL '24 hours'
-      GROUP BY listing_id
+      GROUP BY marketplace_listing_id
       HAVING COUNT(*) > 5
     `;
 
     for (const listing of volatileListings) {
       await analyticsDB.exec`
         INSERT INTO price_anomalies (listing_id, anomaly_type, description, magnitude)
-        VALUES (${listing.listing_id}, 'high_volatility', 
+        VALUES (${listing.marketplace_listing_id}, 'high_volatility', 
                 '${listing.change_count} price changes in 24 hours', 
                 ${listing.change_count})
         ON CONFLICT (listing_id, anomaly_type) DO NOTHING
@@ -67,7 +67,7 @@ export const getAnomalies = api<{ status?: string }, { anomalies: Anomaly[] }>(
   { auth: true, expose: true, method: "GET", path: "/analytics/anomalies" },
   async (req) => {
     const auth = getAuthData()!;
-    let whereClause = "WHERE l.user_id = $1";
+    let whereClause = "WHERE ml.user_id = $1";
     const params: any[] = [auth.userID];
 
     if (req.status) {
@@ -77,7 +77,7 @@ export const getAnomalies = api<{ status?: string }, { anomalies: Anomaly[] }>(
 
     const anomalies = await analyticsDB.rawQueryAll(
       `SELECT pa.* FROM price_anomalies pa
-       JOIN listings l ON pa.listing_id = l.id
+       JOIN marketplace_listings ml ON pa.listing_id = ml.id
        ${whereClause}
        ORDER BY pa.detected_at DESC
        LIMIT 50`,

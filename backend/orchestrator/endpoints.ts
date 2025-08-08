@@ -1,6 +1,6 @@
 import { api, APIError } from "encore.dev/api";
 import { getAuthData } from "~encore/auth";
-import { ebayDB } from "../ebay/db";
+import { listingsDB } from "../listings/db";
 import { orchestrationTopic } from "../events/topics";
 import { v4 as uuidv4 } from 'uuid';
 import { orchestratorDB } from "./db";
@@ -24,15 +24,17 @@ export const repriceAll = api<OrchestrateRepriceAllRequest, OrchestrateRepriceAl
     const correlationId = uuidv4();
 
     // Get eligible listings
-    let whereClause = "WHERE user_id = $1 AND listing_status = 'active'";
+    let whereClause = "WHERE p.user_id = $1 AND ml.status = 'active'";
     const params: any[] = [auth.userID];
     if (req.categoryId) {
-      whereClause += " AND category_id = $2";
+      whereClause += " AND p.category_id = $2";
       params.push(req.categoryId);
     }
     
-    const listings = await ebayDB.rawQueryAll(
-      `SELECT id FROM listings ${whereClause}`,
+    const listings = await listingsDB.rawQueryAll(
+      `SELECT p.id FROM products p
+       JOIN marketplace_listings ml ON p.id = ml.product_id
+       ${whereClause}`,
       ...params
     );
 

@@ -17,12 +17,15 @@ An AI-powered eBay repricing platform built with Encore.ts that optimizes produc
 - **Background Jobs**: Dedicated service for managing all asynchronous tasks.
 - **Advanced AI Capabilities**: Transformer models, LSTMs, GNNs, and Deep Reinforcement Learning for state-of-the-art pricing optimization.
 - **Data Pipeline**: Robust ETL/ELT pipelines with a data lake architecture for scalable data management.
+- **Multi-Marketplace Support**: Unified platform for eBay, Amazon, Shopify, and more with centralized inventory and order management.
 
 ## 🏗️ Architecture
 
 ### Backend Services (Encore.ts)
 - **User Service**: User management and profiles
-- **eBay Service**: eBay API integration and listing management
+- **Marketplace Service**: Abstracted integration layer for eBay, Amazon, Shopify, etc.
+- **Listings Service**: Unified product catalog and inventory management.
+- **Orders Service**: Centralized order processing and fulfillment routing.
 - **Pricing Service**: AI-powered pricing algorithms
 - **Analytics Service**: Performance metrics, forecasting, and insights
 - **Learning Service**: Feedback processing and model improvement

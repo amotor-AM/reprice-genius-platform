@@ -1,7 +1,7 @@
 import { api, APIError } from "encore.dev/api";
 import { getAuthData } from "~encore/auth";
 import { mlDB } from "./db";
-import { ebayDB } from "../ebay/db";
+import { listingsDB } from "../listings/db";
 
 export interface PricePredictionRequest {
   listingId: string;
@@ -29,16 +29,24 @@ export const predictPrice = api<PricePredictionRequest, PricePredictionResponse>
     const auth = getAuthData()!;
 
     // Verify listing ownership
-    const listing = await ebayDB.queryRow`
-      SELECT * FROM listings WHERE id = ${req.listingId} AND user_id = ${auth.userID}
+    const listing = await listingsDB.queryRow`
+      SELECT * FROM products WHERE id = ${req.listingId} AND user_id = ${auth.userID}
     `;
     if (!listing) {
       throw APIError.notFound("Listing not found");
     }
 
+    const marketplaceListing = await listingsDB.queryRow`
+      SELECT * FROM marketplace_listings WHERE product_id = ${listing.id} ORDER BY created_at DESC LIMIT 1
+    `;
+
+    if (!marketplaceListing) {
+      throw APIError.notFound("No marketplace listing found for this product");
+    }
+
     // In a real implementation, this would call a service running the transformer model.
     // Here, we simulate the output of such a model.
-    const prediction = simulateTransformerPrediction(listing, req.context);
+    const prediction = simulateTransformerPrediction(listing, marketplaceListing, req.context);
 
     return {
       listingId: req.listingId,
@@ -53,13 +61,13 @@ export const predictPrice = api<PricePredictionRequest, PricePredictionResponse>
   }
 );
 
-function simulateTransformerPrediction(listing: any, context?: any): { price: number; confidence: number } {
+function simulateTransformerPrediction(product: any, listing: any, context?: any): { price: number; confidence: number } {
   // Simulate a complex prediction based on listing and market context
   let basePrice = listing.current_price;
   let confidence = 0.75;
 
   // Adjust based on title and description (simulating text understanding)
-  if (listing.title.toLowerCase().includes('rare') || listing.title.toLowerCase().includes('vintage')) {
+  if (product.title.toLowerCase().includes('rare') || product.title.toLowerCase().includes('vintage')) {
     basePrice *= 1.1;
     confidence += 0.05;
   }

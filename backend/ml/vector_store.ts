@@ -1,7 +1,7 @@
 import { api, APIError } from "encore.dev/api";
 import { getAuthData } from "~encore/auth";
 import { mlDB } from "./db";
-import { ebayDB } from "../ebay/db";
+import { listingsDB } from "../listings/db";
 import { secret } from "encore.dev/config";
 
 const upstashVectorUrl = secret("UpstashVectorUrl");
@@ -68,19 +68,18 @@ export const generateEmbedding = api<GenerateEmbeddingRequest, GenerateEmbedding
     const auth = getAuthData()!;
 
     // Get listing details
-    const listing = await ebayDB.queryRow`
-      SELECT l.*, u.id as user_id FROM listings l
-      JOIN users u ON l.user_id = u.id
-      WHERE l.id = ${req.listingId} AND l.user_id = ${auth.userID}
+    const product = await listingsDB.queryRow`
+      SELECT * FROM products
+      WHERE id = ${req.listingId} AND user_id = ${auth.userID}
     `;
 
-    if (!listing) {
-      throw APIError.notFound("Listing not found");
+    if (!product) {
+      throw APIError.notFound("Product not found");
     }
 
     try {
       // Extract features for embedding
-      const features = extractProductFeatures(listing);
+      const features = extractProductFeatures(product);
       const featureHash = hashFeatures(features);
       
       // Check cache first
@@ -160,22 +159,25 @@ export const findSimilarProducts = api<FindSimilarRequest, FindSimilarResponse>(
         if (result.id === req.listingId) continue; // Skip self
         
         // Get listing details from database
-        const listing = await ebayDB.queryRow`
-          SELECT id, title, current_price, category_id, condition_id
-          FROM listings 
-          WHERE id = ${result.id}
+        const product = await listingsDB.queryRow`
+          SELECT p.id, p.title, ml.current_price, p.category_id, p.brand
+          FROM products p
+          JOIN marketplace_listings ml ON p.id = ml.product_id
+          WHERE p.id = ${result.id}
+          LIMIT 1
         `;
 
-        if (listing) {
+        if (product) {
           similarProducts.push({
-            listingId: listing.id,
-            title: listing.title,
-            currentPrice: listing.current_price,
+            listingId: product.id,
+            title: product.title,
+            currentPrice: product.current_price,
             similarity: result.score,
             relationshipType: determineRelationshipType(result.score),
             metadata: {
-              category: listing.category_id,
-              condition: listing.condition_id,
+              category: product.category_id,
+              brand: product.brand,
+              condition: (product.properties as any)?.condition,
             },
           });
         }
@@ -195,15 +197,15 @@ export const findSimilarProducts = api<FindSimilarRequest, FindSimilarResponse>(
   }
 );
 
-function extractProductFeatures(listing: any): Record<string, any> {
-  const title = listing.title || '';
-  const description = listing.description || '';
-  const category = listing.category_id || 'unknown';
-  const condition = listing.condition_id || 'unknown';
-  const priceRange = getPriceRange(listing.current_price);
+function extractProductFeatures(product: any): Record<string, any> {
+  const title = product.title || '';
+  const description = product.description || '';
+  const category = product.category_id || 'unknown';
+  const condition = (product.properties as any)?.condition || 'unknown';
+  const priceRange = getPriceRange((product.properties as any)?.price || 0);
   
   // Extract brand from title (simplified)
-  const brand = extractBrandFromTitle(title);
+  const brand = product.brand || extractBrandFromTitle(title);
   
   return {
     title: title.toLowerCase(),
@@ -212,7 +214,7 @@ function extractProductFeatures(listing: any): Record<string, any> {
     brand,
     condition,
     priceRange,
-    price: listing.current_price,
+    price: (product.properties as any)?.price || 0,
   };
 }
 

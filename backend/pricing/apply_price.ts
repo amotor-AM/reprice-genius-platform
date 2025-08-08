@@ -1,9 +1,10 @@
 import { api, APIError } from "encore.dev/api";
 import { getAuthData } from "~encore/auth";
 import { pricingDB } from "./db";
-import { ebayDB } from "../ebay/db";
+import { listingsDB } from "../listings/db";
 import { userDB } from "../user/db";
 import { pricingTopic, analyticsTopic } from "../events/topics";
+import { marketplace } from "~encore/clients";
 
 export interface ApplyPriceRequest {
   listingId: string;
@@ -25,8 +26,8 @@ export const applyPrice = api<ApplyPriceRequest, ApplyPriceResponse>(
     const auth = getAuthData()!;
 
     // Get listing and user details
-    const listing = await ebayDB.queryRow`
-      SELECT * FROM listings 
+    const listing = await listingsDB.queryRow`
+      SELECT * FROM marketplace_listings 
       WHERE id = ${req.listingId} AND user_id = ${auth.userID}
     `;
 
@@ -34,47 +35,43 @@ export const applyPrice = api<ApplyPriceRequest, ApplyPriceResponse>(
       throw APIError.notFound("Listing not found");
     }
 
-    const user = await userDB.queryRow`
-      SELECT ebay_access_token FROM users WHERE id = ${auth.userID}
+    const product = await listingsDB.queryRow`
+      SELECT * FROM products WHERE id = ${listing.product_id}
     `;
 
-    if (!user?.ebay_access_token) {
-      throw APIError.failedPrecondition("eBay account not connected");
+    if (!product) {
+      throw APIError.notFound("Product not found for listing");
     }
 
     // Validate price bounds
-    if (listing.min_price && req.newPrice < listing.min_price) {
-      throw APIError.invalidArgument(`Price cannot be below minimum: $${listing.min_price}`);
+    const constraints = (product.properties as any)?.constraints || {};
+    if (constraints.minPrice && req.newPrice < constraints.minPrice) {
+      throw APIError.invalidArgument(`Price cannot be below minimum: $${constraints.minPrice}`);
     }
 
-    if (listing.max_price && req.newPrice > listing.max_price) {
-      throw APIError.invalidArgument(`Price cannot be above maximum: $${listing.max_price}`);
+    if (constraints.maxPrice && req.newPrice > constraints.maxPrice) {
+      throw APIError.invalidArgument(`Price cannot be above maximum: $${constraints.maxPrice}`);
     }
 
     try {
-      // Update price on eBay (simulated - in production would call eBay API)
-      const ebayUpdateSuccess = await updateEbayPrice(
-        listing.ebay_item_id,
-        req.newPrice,
-        user.ebay_access_token
-      );
-
-      if (!ebayUpdateSuccess) {
-        throw new Error("Failed to update price on eBay");
-      }
+      // Update price on the marketplace
+      await marketplace.updatePrice({
+        marketplaceListingId: req.listingId,
+        newPrice: req.newPrice,
+      });
 
       const oldPrice = listing.current_price;
 
       // Update local database
-      await ebayDB.exec`
-        UPDATE listings 
+      await listingsDB.exec`
+        UPDATE marketplace_listings 
         SET current_price = ${req.newPrice}, updated_at = CURRENT_TIMESTAMP
         WHERE id = ${req.listingId}
       `;
 
       // Record price history
-      await ebayDB.exec`
-        INSERT INTO price_history (listing_id, old_price, new_price, reason, created_at)
+      await listingsDB.exec`
+        INSERT INTO price_history (marketplace_listing_id, old_price, new_price, reason, created_at)
         VALUES (${req.listingId}, ${oldPrice}, ${req.newPrice}, 'manual_update', CURRENT_TIMESTAMP)
       `;
 
@@ -118,31 +115,3 @@ export const applyPrice = api<ApplyPriceRequest, ApplyPriceResponse>(
     }
   }
 );
-
-async function updateEbayPrice(itemId: string, newPrice: number, accessToken: string): Promise<boolean> {
-  try {
-    // In production, this would call eBay's Inventory API to update the price
-    // For now, we'll simulate the API call
-    const response = await fetch(`https://api.ebay.com/sell/inventory/v1/inventory_item/${itemId}`, {
-      method: 'PUT',
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        product: {
-          aspects: {
-            price: [newPrice.toString()],
-          },
-        },
-      }),
-    });
-
-    // For demo purposes, we'll assume success
-    // In production, check response.ok and handle errors
-    return true;
-  } catch (error) {
-    console.error('eBay price update error:', error);
-    return false;
-  }
-}

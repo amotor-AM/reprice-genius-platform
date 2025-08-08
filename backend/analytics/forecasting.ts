@@ -1,7 +1,7 @@
 import { api, APIError } from "encore.dev/api";
 import { getAuthData } from "~encore/auth";
 import { analyticsDB } from "./db";
-import { ebayDB } from "../ebay/db";
+import { listingsDB } from "../listings/db";
 
 export interface SalesForecastRequest {
   productId: string;
@@ -32,20 +32,21 @@ export const getSalesForecast = api<SalesForecastRequest, SalesForecastResponse>
     const periodDays = req.periodDays || 30;
 
     // Verify listing ownership
-    const listing = await ebayDB.queryRow`
-      SELECT id FROM listings WHERE id = ${req.productId} AND user_id = ${auth.userID}
+    const listing = await listingsDB.queryRow`
+      SELECT id FROM products WHERE id = ${req.productId} AND user_id = ${auth.userID}
     `;
     if (!listing) {
       throw APIError.notFound("Product not found");
     }
 
     // Get historical sales data
-    const historicalSales = await ebayDB.queryAll`
-      SELECT DATE(created_at) as date, COUNT(*) as sales
-      FROM price_history -- Using price_history as a proxy for sales events
-      WHERE listing_id = ${req.productId}
-        AND created_at >= NOW() - INTERVAL '90 days'
-      GROUP BY DATE(created_at)
+    const historicalSales = await listingsDB.queryAll`
+      SELECT DATE(ph.created_at) as date, COUNT(*) as sales
+      FROM price_history ph
+      JOIN marketplace_listings ml ON ph.marketplace_listing_id = ml.id
+      WHERE ml.product_id = ${req.productId}
+        AND ph.created_at >= NOW() - INTERVAL '90 days'
+      GROUP BY DATE(ph.created_at)
       ORDER BY date ASC
     `;
 

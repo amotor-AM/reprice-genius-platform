@@ -1,7 +1,7 @@
 import { api, APIError } from "encore.dev/api";
 import { getAuthData } from "~encore/auth";
 import { secret } from "encore.dev/config";
-import { ebayDB } from "../ebay/db";
+import { listingsDB } from "../listings/db";
 import { mlDB } from "./db";
 
 const geminiApiKey = secret("GeminiApiKey");
@@ -68,10 +68,9 @@ export const analyzeMarket = api<MarketAnalysisRequest, MarketAnalysisResponse>(
     const auth = getAuthData()!;
 
     // Get listing details
-    const listing = await ebayDB.queryRow`
-      SELECT l.*, u.id as user_id FROM listings l
-      JOIN users u ON l.user_id = u.id
-      WHERE l.id = ${req.listingId} AND l.user_id = ${auth.userID}
+    const listing = await listingsDB.queryRow`
+      SELECT * FROM products
+      WHERE id = ${req.listingId} AND user_id = ${auth.userID}
     `;
 
     if (!listing) {
@@ -115,14 +114,21 @@ export const getPriceRecommendation = api<PriceRecommendationRequest, PriceRecom
     const auth = getAuthData()!;
 
     // Get listing details
-    const listing = await ebayDB.queryRow`
-      SELECT l.*, u.id as user_id FROM listings l
-      JOIN users u ON l.user_id = u.id
-      WHERE l.id = ${req.listingId} AND l.user_id = ${auth.userID}
+    const listing = await listingsDB.queryRow`
+      SELECT * FROM products
+      WHERE id = ${req.listingId} AND user_id = ${auth.userID}
     `;
 
     if (!listing) {
       throw APIError.notFound("Listing not found");
+    }
+
+    const marketplaceListing = await listingsDB.queryRow`
+      SELECT * FROM marketplace_listings WHERE product_id = ${listing.id} ORDER BY created_at DESC LIMIT 1
+    `;
+
+    if (!marketplaceListing) {
+      throw APIError.notFound("No marketplace listing found for this product");
     }
 
     try {
@@ -145,14 +151,14 @@ export const getPriceRecommendation = api<PriceRecommendationRequest, PriceRecom
       const geminiResponse = await callGeminiAPI(prompt);
       
       // Parse the recommendation
-      const recommendation = parsePriceRecommendation(geminiResponse, listing.current_price);
+      const recommendation = parsePriceRecommendation(geminiResponse, marketplaceListing.current_price);
       
       // Store recommendation for learning
       await storePriceRecommendation(req.listingId, recommendation, geminiResponse);
       
       return {
         listingId: req.listingId,
-        currentPrice: listing.current_price,
+        currentPrice: marketplaceListing.current_price,
         recommendedPrice: recommendation.price,
         priceRange: recommendation.priceRange,
         confidence: recommendation.confidence,
@@ -230,12 +236,12 @@ You are an expert eBay market analyst. Analyze the market conditions for this pr
 
 Product Details:
 - Title: ${listing.title}
-- Current Price: $${listing.current_price}
+- Current Price: $${marketData.currentPrice}
 - Category: ${listing.category_id || 'Unknown'}
-- Condition: ${listing.condition_id || 'Unknown'}
-- Quantity Available: ${listing.quantity}
-- Views: ${listing.views}
-- Watchers: ${listing.watchers}
+- Condition: ${(listing.properties as any)?.condition || 'Unknown'}
+- Quantity Available: ${marketData.quantity || 0}
+- Views: ${marketData.views || 0}
+- Watchers: ${marketData.watchers || 0}
 
 Market Context:
 - Average Market Price: $${marketData.avgPrice || 'Unknown'}
@@ -273,13 +279,13 @@ You are an expert pricing strategist for eBay. Provide an optimal price recommen
 
 Product Details:
 - Title: ${listing.title}
-- Current Price: $${listing.current_price}
-- Original Price: $${listing.original_price}
+- Current Price: $${marketData.currentPrice}
+- Original Price: $${marketData.originalPrice}
 - Category: ${listing.category_id || 'Unknown'}
-- Condition: ${listing.condition_id || 'Unknown'}
-- Target Profit Margin: ${targetMargin || listing.target_profit_margin || 0.15}
-- Min Price: $${listing.min_price || 'None'}
-- Max Price: $${listing.max_price || 'None'}
+- Condition: ${(listing.properties as any)?.condition || 'Unknown'}
+- Target Profit Margin: ${targetMargin || 0.15}
+- Min Price: $${(listing.properties as any)?.minPrice || 'None'}
+- Max Price: $${(listing.properties as any)?.maxPrice || 'None'}
 
 Market Data:
 - Average Competitor Price: $${marketData.avgPrice || 'Unknown'}
@@ -322,38 +328,47 @@ Consider market psychology, competitor positioning, and profit optimization.
 
 async function getMarketContext(listing: any): Promise<any> {
   // Get market data from database
-  const marketData = await ebayDB.queryRow`
+  const marketData = await listingsDB.queryRow`
     SELECT 
-      AVG(current_price) as avg_price,
-      MIN(current_price) as min_price,
-      MAX(current_price) as max_price,
-      COUNT(*) as active_listings,
-      SUM(sold_quantity) as recent_sales
-    FROM listings 
-    WHERE category_id = ${listing.category_id}
-      AND listing_status = 'active'
-      AND created_at >= NOW() - INTERVAL '30 days'
+      AVG(ml.current_price) as avg_price,
+      MIN(ml.current_price) as min_price,
+      MAX(ml.current_price) as max_price,
+      COUNT(*) as active_listings
+    FROM marketplace_listings ml
+    JOIN products p ON ml.product_id = p.id
+    WHERE p.category_id = ${listing.category_id}
+      AND ml.status = 'active'
+      AND ml.created_at >= NOW() - INTERVAL '30 days'
+  `;
+
+  const marketplaceListing = await listingsDB.queryRow`
+    SELECT * FROM marketplace_listings WHERE product_id = ${listing.id} ORDER BY created_at DESC LIMIT 1
   `;
 
   return {
-    avgPrice: marketData?.avg_price || listing.current_price,
-    minPrice: marketData?.min_price || listing.current_price * 0.7,
-    maxPrice: marketData?.max_price || listing.current_price * 1.5,
+    currentPrice: marketplaceListing?.current_price || 0,
+    originalPrice: marketplaceListing?.original_price || 0,
+    quantity: 0, // Mocked
+    views: (marketplaceListing?.metadata as any)?.views || 0,
+    watchers: (marketplaceListing?.metadata as any)?.watchers || 0,
+    avgPrice: marketData?.avg_price || marketplaceListing?.current_price || 0,
+    minPrice: marketData?.min_price || (marketplaceListing?.current_price || 0) * 0.7,
+    maxPrice: marketData?.max_price || (marketplaceListing?.current_price || 0) * 1.5,
     activeListings: marketData?.active_listings || 10,
-    recentSales: marketData?.recent_sales || 5,
+    recentSales: 0, // Mocked
   };
 }
 
 async function getCompetitorPricing(listing: any): Promise<any[]> {
   // Get similar products for competitor analysis
-  const competitors = await ebayDB.queryAll`
-    SELECT title, current_price, views, watchers, sold_quantity
-    FROM listings 
-    WHERE category_id = ${listing.category_id}
-      AND condition_id = ${listing.condition_id}
-      AND listing_status = 'active'
-      AND id != ${listing.id}
-    ORDER BY views DESC
+  const competitors = await listingsDB.queryAll`
+    SELECT p.title, ml.current_price, ml.metadata
+    FROM products p
+    JOIN marketplace_listings ml ON p.id = ml.product_id
+    WHERE p.category_id = ${listing.category_id}
+      AND p.id != ${listing.id}
+      AND ml.status = 'active'
+    ORDER BY ml.created_at DESC
     LIMIT 10
   `;
 
@@ -361,19 +376,20 @@ async function getCompetitorPricing(listing: any): Promise<any[]> {
     title: comp.title,
     price: comp.current_price,
     performance: {
-      views: comp.views,
-      watchers: comp.watchers,
-      sales: comp.sold_quantity,
+      views: (comp.metadata as any)?.views || 0,
+      watchers: (comp.metadata as any)?.watchers || 0,
+      sales: 0, // Mocked
     }
   }));
 }
 
 async function getHistoricalPricing(listingId: string): Promise<any[]> {
-  const history = await ebayDB.queryAll`
-    SELECT old_price, new_price, reason, created_at
-    FROM price_history 
-    WHERE listing_id = ${listingId}
-    ORDER BY created_at DESC
+  const history = await listingsDB.queryAll`
+    SELECT ph.old_price, ph.new_price, ph.reason, ph.created_at
+    FROM price_history ph
+    JOIN marketplace_listings ml ON ph.marketplace_listing_id = ml.id
+    WHERE ml.product_id = ${listingId}
+    ORDER BY ph.created_at DESC
     LIMIT 10
   `;
 

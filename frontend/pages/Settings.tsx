@@ -35,7 +35,7 @@ export function Settings() {
 
   const handleConnectEbay = async () => {
     try {
-      const response = await backend.ebay.getAuthUrl();
+      const response = await backend.marketplace.getAuthUrl({ marketplace: 'ebay' });
       window.location.href = response.authUrl;
     } catch (error) {
       console.error('Error connecting eBay:', error);

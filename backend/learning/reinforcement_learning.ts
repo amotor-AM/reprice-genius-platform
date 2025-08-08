@@ -1,7 +1,7 @@
 import { api, APIError } from "encore.dev/api";
 import { getAuthData } from "~encore/auth";
 import { learningDB } from "./db";
-import { ebayDB } from "../ebay/db";
+import { listingsDB } from "../listings/db";
 
 export interface RLState {
   listingId: string;
@@ -156,8 +156,8 @@ export const getRLAction = api<GetRLActionRequest, GetRLActionResponse>(
 
     try {
       // Verify listing ownership
-      const listing = await ebayDB.queryRow`
-        SELECT * FROM listings WHERE id = ${req.listingId} AND user_id = ${auth.userID}
+      const listing = await listingsDB.queryRow`
+        SELECT * FROM products WHERE id = ${req.listingId} AND user_id = ${auth.userID}
       `;
 
       if (!listing) {
@@ -260,22 +260,24 @@ export const recordRLReward = api<{ listingId: string; reward: RLReward; nextSta
 );
 
 async function getEligibleListingsForRL(userId: string, categoryId?: string, listingIds?: string[]): Promise<string[]> {
-  let whereClause = "WHERE user_id = $1 AND listing_status = 'active'";
+  let whereClause = "WHERE p.user_id = $1 AND ml.status = 'active'";
   const params: any[] = [userId];
 
   if (categoryId) {
-    whereClause += " AND category_id = $2";
+    whereClause += " AND p.category_id = $2";
     params.push(categoryId);
   }
 
   if (listingIds && listingIds.length > 0) {
-    whereClause += ` AND id = ANY($${params.length + 1})`;
+    whereClause += ` AND p.id = ANY($${params.length + 1})`;
     params.push(listingIds);
   }
 
-  const listings = await ebayDB.rawQueryAll(
-    `SELECT id FROM listings ${whereClause} 
-     ORDER BY views DESC, watchers DESC 
+  const listings = await listingsDB.rawQueryAll(
+    `SELECT p.id FROM products p
+     JOIN marketplace_listings ml ON p.id = ml.product_id
+     ${whereClause} 
+     ORDER BY ml.created_at DESC, ml.id
      LIMIT 100`,
     ...params
   );
@@ -341,45 +343,50 @@ async function runRLEpisode(
 
 async function getCurrentState(listingId: string): Promise<RLState> {
   // Get listing data
-  const listing = await ebayDB.queryRow`
-    SELECT * FROM listings WHERE id = ${listingId}
+  const product = await listingsDB.queryRow`
+    SELECT * FROM products WHERE id = ${listingId}
   `;
 
-  if (!listing) {
-    throw new Error(`Listing ${listingId} not found`);
+  if (!product) {
+    throw new Error(`Product ${listingId} not found`);
   }
 
+  const marketplaceListing = await listingsDB.queryRow`
+    SELECT * FROM marketplace_listings WHERE product_id = ${listingId} ORDER BY created_at DESC LIMIT 1
+  `;
+
   // Get price history
-  const priceHistory = await ebayDB.queryAll`
+  const priceHistory = await listingsDB.queryAll`
     SELECT new_price FROM price_history 
-    WHERE listing_id = ${listingId}
+    WHERE marketplace_listing_id = ${marketplaceListing.id}
     ORDER BY created_at DESC
     LIMIT 10
   `;
 
   // Get competitor prices (simplified)
-  const competitors = await ebayDB.queryAll`
-    SELECT current_price FROM listings
-    WHERE category_id = ${listing.category_id}
-      AND id != ${listingId}
-      AND listing_status = 'active'
-    ORDER BY views DESC
+  const competitors = await listingsDB.queryAll`
+    SELECT ml.current_price FROM marketplace_listings ml
+    JOIN products p ON ml.product_id = p.id
+    WHERE p.category_id = ${product.category_id}
+      AND p.id != ${listingId}
+      AND ml.status = 'active'
+    ORDER BY ml.created_at DESC
     LIMIT 5
   `;
 
   // Calculate derived features
   const daysSinceListing = Math.floor(
-    (Date.now() - new Date(listing.created_at).getTime()) / (1000 * 60 * 60 * 24)
+    (Date.now() - new Date(product.created_at).getTime()) / (1000 * 60 * 60 * 24)
   );
 
   return {
     listingId,
     features: {
-      currentPrice: listing.current_price,
-      originalPrice: listing.original_price,
+      currentPrice: marketplaceListing.current_price,
+      originalPrice: marketplaceListing.original_price,
       priceHistory: priceHistory.map(p => p.new_price),
-      views: listing.views,
-      watchers: listing.watchers,
+      views: (marketplaceListing.metadata as any)?.views || 0,
+      watchers: (marketplaceListing.metadata as any)?.watchers || 0,
       competitorPrices: competitors.map(c => c.current_price),
       marketTrend: 0.02, // Simplified market trend
       seasonalFactor: getSeasonalFactor(),
@@ -532,7 +539,7 @@ async function storeRLTransition(
 }
 
 async function updateQValues(lastState: any, reward: RLReward, nextState: RLState): Promise<void> {
-  const stateHash = hashState(JSON.parse(lastState.state_vector));
+  const stateHash = hashState({ features: JSON.parse(lastState.state_vector) } as RLState);
   const action = lastState.action_taken;
   const nextStateHash = hashState(nextState);
   

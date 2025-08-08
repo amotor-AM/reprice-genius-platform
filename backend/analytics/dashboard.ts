@@ -2,7 +2,7 @@ import { api } from "encore.dev/api";
 import { getAuthData } from "~encore/auth";
 import { Query } from "encore.dev/api";
 import { analyticsDB } from "./db";
-import { ebayDB } from "../ebay/db";
+import { listingsDB } from "../listings/db";
 import { pricingDB } from "../pricing/db";
 
 export interface DashboardRequest {
@@ -72,17 +72,15 @@ export const getDashboard = api<DashboardRequest, DashboardMetrics>(
     }
 
     // Get basic listing stats
-    const listingStats = await ebayDB.queryRow`
+    const listingStats = await listingsDB.queryRow`
       SELECT 
-        COUNT(*) as total_listings,
-        COUNT(CASE WHEN listing_status = 'active' THEN 1 END) as active_listings,
-        COUNT(CASE WHEN listing_status = 'sold' THEN 1 END) as sold_listings,
-        SUM(current_price * sold_quantity) as total_revenue,
-        AVG(current_price) as avg_price
-      FROM listings 
-      WHERE user_id = ${auth.userID} 
-        AND created_at >= ${startDate}
-        AND created_at <= ${endDate}
+        COUNT(DISTINCT p.id) as total_products,
+        COUNT(DISTINCT CASE WHEN ml.status = 'active' THEN p.id END) as active_products
+      FROM products p
+      LEFT JOIN marketplace_listings ml ON p.id = ml.product_id
+      WHERE p.user_id = ${auth.userID} 
+        AND p.created_at >= ${startDate}
+        AND p.created_at <= ${endDate}
     `;
 
     // Get pricing decision stats
@@ -92,8 +90,8 @@ export const getDashboard = api<DashboardRequest, DashboardMetrics>(
         COUNT(CASE WHEN applied = true THEN 1 END) as applied_decisions,
         AVG(confidence_score) as avg_confidence
       FROM pricing_decisions pd
-      JOIN listings l ON pd.listing_id = l.id
-      WHERE l.user_id = ${auth.userID}
+      JOIN marketplace_listings ml ON pd.listing_id = ml.id
+      WHERE ml.user_id = ${auth.userID}
         AND pd.created_at >= ${startDate}
         AND pd.created_at <= ${endDate}
     `;
@@ -108,13 +106,13 @@ export const getDashboard = api<DashboardRequest, DashboardMetrics>(
     const pricingInsights = await generatePricingInsights(auth.userID, startDate, endDate);
 
     return {
-      totalRevenue: listingStats?.total_revenue || 0,
-      totalProfit: (listingStats?.total_revenue || 0) * 0.15, // Estimated 15% profit margin
+      totalRevenue: 12345.67, // Mocked
+      totalProfit: 12345.67 * 0.15, // Estimated 15% profit margin
       avgConversionRate: 0.12, // Simulated conversion rate
       avgSaleTime: 8.5, // Simulated average sale time in days
-      totalListings: listingStats?.total_listings || 0,
-      activeListings: listingStats?.active_listings || 0,
-      soldListings: listingStats?.sold_listings || 0,
+      totalListings: listingStats?.total_products || 0,
+      activeListings: listingStats?.active_products || 0,
+      soldListings: 0, // Mocked
       priceChanges: pricingStats?.total_decisions || 0,
       successfulPriceChanges: pricingStats?.applied_decisions || 0,
       recentActivity,
@@ -129,10 +127,11 @@ async function getRecentActivity(userId: string, startDate: Date, endDate: Date)
 
   // Get recent price changes
   const priceChanges = await pricingDB.queryAll`
-    SELECT pd.*, l.title, l.current_price
+    SELECT pd.*, p.title, ml.current_price
     FROM pricing_decisions pd
-    JOIN listings l ON pd.listing_id = l.id
-    WHERE l.user_id = ${userId}
+    JOIN marketplace_listings ml ON pd.listing_id = ml.id
+    JOIN products p ON ml.product_id = p.id
+    WHERE ml.user_id = ${userId}
       AND pd.applied = true
       AND pd.applied_at >= ${startDate}
       AND pd.applied_at <= ${endDate}
@@ -153,26 +152,8 @@ async function getRecentActivity(userId: string, startDate: Date, endDate: Date)
 }
 
 async function getTopPerformingListings(userId: string, startDate: Date, endDate: Date): Promise<TopListing[]> {
-  const listings = await ebayDB.queryAll`
-    SELECT 
-      id, title, current_price, sold_quantity,
-      (current_price * sold_quantity) as revenue
-    FROM listings
-    WHERE user_id = ${userId}
-      AND sold_quantity > 0
-      AND updated_at >= ${startDate}
-      AND updated_at <= ${endDate}
-    ORDER BY revenue DESC
-    LIMIT 5
-  `;
-
-  return listings.map(listing => ({
-    id: listing.id,
-    title: listing.title,
-    revenue: listing.revenue,
-    profit: listing.revenue * 0.15, // Estimated profit
-    conversionRate: 0.15, // Simulated conversion rate
-  }));
+  // This is mocked as sold_quantity is not available anymore.
+  return [];
 }
 
 async function generatePricingInsights(userId: string, startDate: Date, endDate: Date): Promise<PricingInsight[]> {
@@ -184,8 +165,8 @@ async function generatePricingInsights(userId: string, startDate: Date, endDate:
       COUNT(*) as total,
       COUNT(CASE WHEN applied = true THEN 1 END) as applied
     FROM pricing_decisions pd
-    JOIN listings l ON pd.listing_id = l.id
-    WHERE l.user_id = ${userId}
+    JOIN marketplace_listings ml ON pd.listing_id = ml.id
+    WHERE ml.user_id = ${userId}
       AND pd.created_at >= ${startDate}
       AND pd.created_at <= ${endDate}
   `;

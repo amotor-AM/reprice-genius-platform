@@ -2,7 +2,7 @@ import { api, APIError } from "encore.dev/api";
 import { getAuthData } from "~encore/auth";
 import { graphDB } from "./db";
 import { neo4jClient } from "./neo4j_client";
-import { ebayDB } from "../ebay/db";
+import { listingsDB } from "../listings/db";
 
 export interface CreateNodeRequest {
   nodeType: 'product' | 'category' | 'brand' | 'competitor' | 'price_point' | 'sale';
@@ -135,8 +135,8 @@ export const syncProduct = api<SyncProductRequest, SyncProductResponse>(
 
     try {
       // Get listing details
-      const listing = await ebayDB.queryRow`
-        SELECT * FROM listings WHERE id = ${req.listingId} AND user_id = ${auth.userID}
+      const listing = await listingsDB.queryRow`
+        SELECT * FROM products WHERE id = ${req.listingId} AND user_id = ${auth.userID}
       `;
 
       if (!listing) {
@@ -159,14 +159,8 @@ export const syncProduct = api<SyncProductRequest, SyncProductResponse>(
           properties: {
             listingId: listing.id,
             title: listing.title,
-            currentPrice: listing.current_price,
-            originalPrice: listing.original_price,
             categoryId: listing.category_id,
-            condition: listing.condition_id,
-            quantity: listing.quantity,
-            views: listing.views,
-            watchers: listing.watchers,
-            status: listing.listing_status,
+            properties: listing.properties,
           },
         });
         productNodeId = productResponse.nodeId;
@@ -201,36 +195,14 @@ export const syncProduct = api<SyncProductRequest, SyncProductResponse>(
         }
       }
 
-      // Create price point nodes for current and historical prices
-      const pricePointResponse = await createNode.call({
-        nodeType: 'price_point',
-        properties: {
-          price: listing.current_price,
-          timestamp: new Date().toISOString(),
-          listingId: listing.id,
-        },
-      });
-
-      // Create PRICED_AT relationship
-      await createRelationship.call({
-        sourceNodeId: productNodeId,
-        targetNodeId: pricePointResponse.nodeId,
-        relationshipType: 'PRICED_AT',
-        properties: {
-          timestamp: new Date().toISOString(),
-        },
-        strength: 1.0,
-      });
-      relationshipsCreated++;
-
       // Find and create competitor relationships
-      const competitors = await ebayDB.queryAll`
-        SELECT id, title, current_price FROM listings
-        WHERE category_id = ${listing.category_id}
-          AND condition_id = ${listing.condition_id}
-          AND id != ${listing.id}
-          AND listing_status = 'active'
-        ORDER BY ABS(current_price - ${listing.current_price})
+      const competitors = await listingsDB.queryAll`
+        SELECT p.id, p.title, ml.current_price 
+        FROM products p
+        JOIN marketplace_listings ml ON p.id = ml.product_id
+        WHERE p.category_id = ${listing.category_id}
+          AND p.id != ${listing.id}
+          AND ml.status = 'active'
         LIMIT 10
       `;
 
@@ -243,8 +215,8 @@ export const syncProduct = api<SyncProductRequest, SyncProductResponse>(
 
         if (competitorNode) {
           // Create COMPETES_WITH relationship
-          const priceRatio = listing.current_price / competitor.current_price;
-          const strength = Math.max(0.1, Math.min(1.0, 2 - Math.abs(priceRatio - 1)));
+          const priceRatio = 1; // Mock
+          const strength = 0.5; // Mock
 
           try {
             await createRelationship.call({
@@ -253,7 +225,7 @@ export const syncProduct = api<SyncProductRequest, SyncProductResponse>(
               relationshipType: 'COMPETES_WITH',
               properties: {
                 priceRatio,
-                priceDifference: Math.abs(listing.current_price - competitor.current_price),
+                priceDifference: 0, // Mock
               },
               strength,
             });
@@ -280,8 +252,10 @@ export const syncProduct = api<SyncProductRequest, SyncProductResponse>(
 // Bulk sync all user's products to the graph
 export async function syncAllUserProducts(userId: string): Promise<{ synced: number; errors: number }> {
   try {
-    const listings = await ebayDB.queryAll`
-      SELECT id FROM listings WHERE user_id = ${userId} AND listing_status = 'active'
+    const listings = await listingsDB.queryAll`
+      SELECT p.id FROM products p 
+      JOIN marketplace_listings ml ON p.id = ml.product_id 
+      WHERE p.user_id = ${userId} AND ml.status = 'active'
     `;
 
     let synced = 0;

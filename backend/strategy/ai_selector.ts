@@ -2,7 +2,7 @@ import { api, APIError } from "encore.dev/api";
 import { getAuthData } from "~encore/auth";
 import { secret } from "encore.dev/config";
 import { strategyDB } from "./db";
-import { ebayDB } from "../ebay/db";
+import { listingsDB } from "../listings/db";
 import { strategyTopic } from "../events/topics";
 
 const geminiApiKey = secret("GeminiApiKey");
@@ -63,8 +63,8 @@ export const selectStrategy = api<SelectStrategyRequest, SelectStrategyResponse>
 
     try {
       // Verify listing ownership
-      const listing = await ebayDB.queryRow`
-        SELECT * FROM listings WHERE id = ${req.listingId} AND user_id = ${auth.userID}
+      const listing = await listingsDB.queryRow`
+        SELECT * FROM products WHERE id = ${req.listingId} AND user_id = ${auth.userID}
       `;
 
       if (!listing) {
@@ -124,8 +124,8 @@ PRODUCT INFORMATION:
 - Title: ${listing.title}
 - Current Price: $${req.marketContext.currentPrice}
 - Category: ${listing.category_id || 'Unknown'}
-- Views: ${listing.views || 0}
-- Watchers: ${listing.watchers || 0}
+- Views: ${(listing.properties as any)?.views || 0}
+- Watchers: ${(listing.properties as any)?.watchers || 0}
 
 BUSINESS OBJECTIVES:
 - Primary Goal: ${businessObjectives.primaryGoal}

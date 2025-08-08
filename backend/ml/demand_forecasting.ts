@@ -1,7 +1,7 @@
 import { api, APIError } from "encore.dev/api";
 import { getAuthData } from "~encore/auth";
 import { mlDB } from "./db";
-import { ebayDB } from "../ebay/db";
+import { listingsDB } from "../listings/db";
 
 export interface DemandForecastRequest {
   listingId: string;
@@ -27,8 +27,8 @@ export const forecastDemand = api<DemandForecastRequest, DemandForecastResponse>
     const auth = getAuthData()!;
 
     // Verify listing ownership
-    const listing = await ebayDB.queryRow`
-      SELECT id FROM listings WHERE id = ${req.listingId} AND user_id = ${auth.userID}
+    const listing = await listingsDB.queryRow`
+      SELECT id FROM products WHERE id = ${req.listingId} AND user_id = ${auth.userID}
     `;
     if (!listing) {
       throw APIError.notFound("Listing not found");
@@ -55,13 +55,14 @@ export const forecastDemand = api<DemandForecastRequest, DemandForecastResponse>
 
 async function getHistoricalDemandData(listingId: string): Promise<number[]> {
   // Use sales data as a proxy for demand
-  const salesData = await ebayDB.queryAll`
+  const salesData = await listingsDB.queryAll`
     SELECT COUNT(*) as daily_sales
-    FROM price_history -- Using price_history as a proxy for sales events
-    WHERE listing_id = ${listingId}
-      AND created_at >= NOW() - INTERVAL '180 days'
-    GROUP BY DATE(created_at)
-    ORDER BY DATE(created_at) ASC
+    FROM price_history ph
+    JOIN marketplace_listings ml ON ph.marketplace_listing_id = ml.id
+    WHERE ml.product_id = ${listingId}
+      AND ph.created_at >= NOW() - INTERVAL '180 days'
+    GROUP BY DATE(ph.created_at)
+    ORDER BY DATE(ph.created_at) ASC
   `;
   return salesData.map(row => row.daily_sales);
 }

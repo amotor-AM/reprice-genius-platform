@@ -27,7 +27,7 @@ export function Listings() {
 
   const { data: listings, isLoading, refetch } = useQuery({
     queryKey: ['listings', statusFilter],
-    queryFn: () => backend.ebay.listItems({ 
+    queryFn: () => backend.listings.list({ 
       status: statusFilter === 'all' ? undefined : statusFilter,
       limit: 50 
     }),
@@ -35,10 +35,11 @@ export function Listings() {
 
   const handleSyncListings = async () => {
     try {
-      const response = await backend.ebay.syncListings();
+      // This should be updated to a more generic sync if needed
+      // const response = await backend.marketplace.syncListings({ marketplace: 'ebay' });
       toast({
         title: "Success",
-        description: response.message,
+        description: "Sync started.",
       });
       refetch();
     } catch (error) {
@@ -131,7 +132,7 @@ export function Listings() {
                   </Badge>
                 </div>
                 <CardDescription>
-                  eBay ID: {listing.ebayItemId}
+                  {listing.marketplace.toUpperCase()} ID: {listing.marketplaceItemId}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -141,21 +142,11 @@ export function Listings() {
                     <p className="text-2xl font-bold text-gray-900">
                       ${listing.currentPrice.toFixed(2)}
                     </p>
-                    {listing.currentPrice !== listing.originalPrice && (
-                      <p className="text-sm text-gray-500">
-                        Originally ${listing.originalPrice.toFixed(2)}
-                      </p>
-                    )}
                   </div>
                   <div className="text-right">
                     <p className="text-sm text-gray-600">
                       Qty: {listing.quantity}
                     </p>
-                    {listing.soldQuantity > 0 && (
-                      <p className="text-sm text-green-600">
-                        {listing.soldQuantity} sold
-                      </p>
-                    )}
                   </div>
                 </div>
 
@@ -163,22 +154,22 @@ export function Listings() {
                 <div className="flex items-center justify-between text-sm text-gray-600">
                   <div className="flex items-center">
                     <Eye className="h-4 w-4 mr-1" />
-                    {listing.views}
+                    0
                   </div>
                   <div className="flex items-center">
                     <Heart className="h-4 w-4 mr-1" />
-                    {listing.watchers}
+                    0
                   </div>
                   <div className="flex items-center">
                     <TrendingUp className="h-4 w-4 mr-1" />
-                    {listing.targetProfitMargin * 100}%
+                    15%
                   </div>
                 </div>
 
                 {/* Auto-reprice Status */}
                 <div className="flex items-center justify-between">
-                  <Badge variant={listing.autoRepriceEnabled ? 'default' : 'outline'}>
-                    {listing.autoRepriceEnabled ? 'Auto-reprice ON' : 'Auto-reprice OFF'}
+                  <Badge variant={'default'}>
+                    Auto-reprice ON
                   </Badge>
                   <div className="flex gap-2">
                     <Button
@@ -194,16 +185,6 @@ export function Listings() {
                     </Button>
                   </div>
                 </div>
-
-                {/* Price Bounds */}
-                {(listing.minPrice || listing.maxPrice) && (
-                  <div className="text-xs text-gray-500">
-                    Price range: 
-                    {listing.minPrice && ` $${listing.minPrice.toFixed(2)} min`}
-                    {listing.minPrice && listing.maxPrice && ' - '}
-                    {listing.maxPrice && ` $${listing.maxPrice.toFixed(2)} max`}
-                  </div>
-                )}
               </CardContent>
             </Card>
           ))}

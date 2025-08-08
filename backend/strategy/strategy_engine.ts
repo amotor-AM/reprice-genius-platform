@@ -1,7 +1,7 @@
 import { api, APIError } from "encore.dev/api";
 import { getAuthData } from "~encore/auth";
 import { strategyDB } from "./db";
-import { ebayDB } from "../ebay/db";
+import { listingsDB } from "../listings/db";
 import { ml } from "~encore/clients";
 import { graph } from "~encore/clients";
 
@@ -83,8 +83,8 @@ export const evaluateStrategies = api<EvaluateStrategiesRequest, EvaluateStrateg
 
     try {
       // Verify listing ownership
-      const listing = await ebayDB.queryRow`
-        SELECT * FROM listings WHERE id = ${req.listingId} AND user_id = ${auth.userID}
+      const listing = await listingsDB.queryRow`
+        SELECT * FROM products WHERE id = ${req.listingId} AND user_id = ${auth.userID}
       `;
 
       if (!listing) {
@@ -149,17 +149,22 @@ export const evaluateStrategies = api<EvaluateStrategiesRequest, EvaluateStrateg
 
 async function getMarketContext(listingId: string, marketConditions?: any) {
   // Get listing details
-  const listing = await ebayDB.queryRow`
-    SELECT * FROM listings WHERE id = ${listingId}
+  const listing = await listingsDB.queryRow`
+    SELECT * FROM products WHERE id = ${listingId}
+  `;
+
+  const marketplaceListing = await listingsDB.queryRow`
+    SELECT * FROM marketplace_listings WHERE product_id = ${listingId} ORDER BY created_at DESC LIMIT 1
   `;
 
   // Get competitor prices
-  const competitors = await ebayDB.queryAll`
-    SELECT current_price FROM listings
-    WHERE category_id = ${listing.category_id}
-      AND id != ${listingId}
-      AND listing_status = 'active'
-    ORDER BY views DESC
+  const competitors = await listingsDB.queryAll`
+    SELECT ml.current_price FROM marketplace_listings ml
+    JOIN products p ON ml.product_id = p.id
+    WHERE p.category_id = ${listing.category_id}
+      AND p.id != ${listingId}
+      AND ml.status = 'active'
+    ORDER BY ml.created_at DESC
     LIMIT 10
   `;
 
@@ -173,7 +178,7 @@ async function getMarketContext(listingId: string, marketConditions?: any) {
   }
 
   return {
-    currentPrice: listing.current_price,
+    currentPrice: marketplaceListing.current_price,
     competitorPrices: competitors.map(c => c.current_price),
     demandSignals,
     marketTrend: marketConditions?.demandLevel || 'stable',
@@ -231,7 +236,7 @@ async function evaluateStrategy(
   marketContext: any,
   marketConditions?: any
 ): Promise<StrategyEvaluation> {
-  const currentPrice = listing.current_price;
+  const currentPrice = marketContext.currentPrice;
   let predictedPrice = currentPrice;
   let confidence = 0.7; // Base confidence
 
@@ -311,7 +316,7 @@ async function evaluateStrategy(
 
 async function evaluateCompetitiveMatching(strategy: PricingStrategy, listing: any, marketContext: any): Promise<number> {
   const competitorPrices = marketContext.competitorPrices;
-  if (competitorPrices.length === 0) return listing.current_price;
+  if (competitorPrices.length === 0) return marketContext.currentPrice;
 
   const avgCompetitorPrice = competitorPrices.reduce((sum, price) => sum + price, 0) / competitorPrices.length;
   const aggressiveness = strategy.config.aggressiveness || 0.5;
@@ -322,7 +327,7 @@ async function evaluateCompetitiveMatching(strategy: PricingStrategy, listing: a
 }
 
 async function evaluateProfitMaximization(strategy: PricingStrategy, listing: any, marketContext: any): Promise<number> {
-  const currentPrice = listing.current_price;
+  const currentPrice = marketContext.currentPrice;
   const targetMargin = strategy.config.constraints?.profitMarginThreshold || 0.3;
   const aggressiveness = strategy.config.aggressiveness || 0.5;
 
@@ -334,7 +339,7 @@ async function evaluateProfitMaximization(strategy: PricingStrategy, listing: an
 }
 
 async function evaluateVolumeOptimization(strategy: PricingStrategy, listing: any, marketContext: any): Promise<number> {
-  const currentPrice = listing.current_price;
+  const currentPrice = marketContext.currentPrice;
   const aggressiveness = strategy.config.aggressiveness || 0.5;
   const competitorPrices = marketContext.competitorPrices;
 
@@ -350,7 +355,7 @@ async function evaluateVolumeOptimization(strategy: PricingStrategy, listing: an
 }
 
 async function evaluatePenetrationPricing(strategy: PricingStrategy, listing: any, marketContext: any): Promise<number> {
-  const currentPrice = listing.current_price;
+  const currentPrice = marketContext.currentPrice;
   const aggressiveness = strategy.config.aggressiveness || 0.5;
   const competitorPrices = marketContext.competitorPrices;
 
@@ -366,7 +371,7 @@ async function evaluatePenetrationPricing(strategy: PricingStrategy, listing: an
 }
 
 async function evaluateDynamicDemand(strategy: PricingStrategy, listing: any, marketContext: any): Promise<number> {
-  const currentPrice = listing.current_price;
+  const currentPrice = marketContext.currentPrice;
   const demandSignals = marketContext.demandSignals;
   const aggressiveness = strategy.config.aggressiveness || 0.5;
 
@@ -393,7 +398,7 @@ async function evaluateDynamicDemand(strategy: PricingStrategy, listing: any, ma
 
 async function evaluateCustomStrategy(strategy: PricingStrategy, listing: any, marketContext: any): Promise<number> {
   // For custom strategies, apply the custom rules
-  const currentPrice = listing.current_price;
+  const currentPrice = marketContext.currentPrice;
   const customRules = strategy.config;
   
   let adjustedPrice = currentPrice;
