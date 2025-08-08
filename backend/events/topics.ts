@@ -67,6 +67,13 @@ export interface RepriceListingEvent {
   correlationId: string;
 }
 
+export interface AnalyticsEvent {
+  eventType: 'sale' | 'price_change' | 'view';
+  listingId: string;
+  value: number;
+  timestamp: Date;
+}
+
 // --- Topics ---
 
 export const listingTopic = new Topic<ListingEvent>("listing-events", {
@@ -94,5 +101,9 @@ export const learningTopic = new Topic<LearningCompleteEvent>("learning-events",
 });
 
 export const orchestrationTopic = new Topic<RepriceListingEvent>("orchestration-events", {
+  deliveryGuarantee: "at-least-once",
+});
+
+export const analyticsTopic = new Topic<AnalyticsEvent>("analytics-events", {
   deliveryGuarantee: "at-least-once",
 });

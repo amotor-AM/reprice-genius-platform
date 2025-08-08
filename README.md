@@ -11,6 +11,9 @@ An AI-powered eBay repricing platform built with Encore.ts that optimizes produc
 - **Risk Management**: Built-in safeguards and price boundaries
 - **Comprehensive Analytics**: Detailed performance tracking and insights
 - **Event-Driven Architecture**: Scalable and resilient workflows using sagas and an event bus.
+- **Predictive Analytics**: Time-series forecasting for sales and demand.
+- **Cohort Analysis**: Track performance of pricing strategies over time.
+- **Real-time Analytics**: Live streaming of key performance indicators.
 
 ## 🏗️ Architecture
 
@@ -18,7 +21,7 @@ An AI-powered eBay repricing platform built with Encore.ts that optimizes produc
 - **User Service**: User management and profiles
 - **eBay Service**: eBay API integration and listing management
 - **Pricing Service**: AI-powered pricing algorithms
-- **Analytics Service**: Performance metrics and insights
+- **Analytics Service**: Performance metrics, forecasting, and insights
 - **Learning Service**: Feedback processing and model improvement
 - **ML Service**: Vector operations and similarity search
 - **Cache Service**: High-performance caching layer
@@ -164,6 +167,7 @@ The application uses multiple PostgreSQL databases:
 
 ### Analytics
 - `GET /analytics/dashboard` - Get dashboard metrics
+- `GET /analytics/forecast/{productId}` - Get sales forecast
 
 ### Orchestration
 - `POST /orchestrate/reprice-all` - Trigger bulk repricing workflow

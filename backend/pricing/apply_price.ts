@@ -3,7 +3,7 @@ import { getAuthData } from "~encore/auth";
 import { pricingDB } from "./db";
 import { ebayDB } from "../ebay/db";
 import { userDB } from "../user/db";
-import { pricingTopic } from "../events/topics";
+import { pricingTopic, analyticsTopic } from "../events/topics";
 
 export interface ApplyPriceRequest {
   listingId: string;
@@ -95,6 +95,14 @@ export const applyPrice = api<ApplyPriceRequest, ApplyPriceResponse>(
         newPrice: req.newPrice,
         reason: req.decisionId ? 'ai_suggestion' : 'manual_update',
         confidence: 1.0, // Placeholder
+        timestamp: new Date(),
+      });
+
+      // Publish Analytics event
+      await analyticsTopic.publish({
+        eventType: 'price_change',
+        listingId: req.listingId,
+        value: req.newPrice - oldPrice,
         timestamp: new Date(),
       });
 
