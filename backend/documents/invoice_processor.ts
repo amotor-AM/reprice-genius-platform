@@ -6,10 +6,9 @@ import { documentProcessingTopic } from "./queues";
 import { Subscription } from "encore.dev/pubsub";
 import { extractDataFromInvoice } from "./ocr";
 import { pricing } from "~encore/clients";
-import { Buffer } from "buffer";
 
 export interface UploadInvoiceRequest {
-  file: Buffer;
+  file: string; // base64 encoded
   fileName: string;
   templateId?: string;
 }
@@ -33,8 +32,10 @@ export const uploadInvoice = api<UploadInvoiceRequest, UploadInvoiceResponse>(
     const documentId = `doc_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     const storagePath = `invoices/${auth.userID}/${documentId}/${req.fileName}`;
 
+    const fileBuffer = Buffer.from(req.file, 'base64');
+
     // Upload to bucket
-    await documentsBucket.upload(storagePath, req.file);
+    await documentsBucket.upload(storagePath, fileBuffer);
 
     // Create document record
     await documentsDB.exec`

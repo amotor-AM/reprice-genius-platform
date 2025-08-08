@@ -5,10 +5,9 @@ import { documentsDB } from "./db";
 import { csvImportTopic } from "./queues";
 import { Subscription } from "encore.dev/pubsub";
 import { ebayDB } from "../ebay/db";
-import { Buffer } from "buffer";
 
 export interface ImportCsvRequest {
-  file: Buffer;
+  file: string; // base64 encoded
   fileName: string;
   importType: 'listings' | 'costs';
 }
@@ -44,8 +43,10 @@ export const importCsv = api<ImportCsvRequest, ImportCsvResponse>(
     const jobId = `csv_import_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     const storagePath = `csv_imports/${auth.userID}/${jobId}/${req.fileName}`;
 
+    const fileBuffer = Buffer.from(req.file, 'base64');
+
     // Upload to bucket
-    await documentsBucket.upload(storagePath, req.file);
+    await documentsBucket.upload(storagePath, fileBuffer);
 
     // Create job record
     await documentsDB.exec`

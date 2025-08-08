@@ -2,7 +2,6 @@ import { api, APIError } from "encore.dev/api";
 import { secret } from "encore.dev/config";
 import { documentsDB } from "./db";
 import { documentsBucket } from "./storage";
-import { Buffer } from "buffer";
 
 const googleVisionApiKey = secret("GoogleVisionApiKey");
 
