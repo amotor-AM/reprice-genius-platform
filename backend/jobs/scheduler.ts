@@ -82,3 +82,15 @@ export const scheduledExperimentCheck = cron("scheduled-experiment-check", {
     });
   },
 });
+
+// Automated model retraining (weekly)
+export const scheduledModelRetraining = cron("scheduled-model-retraining", {
+  every: "168h", // every 7 days
+  handler: async () => {
+    await scheduleJob.call({
+      jobType: 'model_retraining',
+      priority: 'low',
+      payload: { allModels: true },
+    });
+  },
+});

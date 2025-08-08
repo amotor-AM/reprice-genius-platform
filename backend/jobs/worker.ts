@@ -49,6 +49,9 @@ async function processJob(event: JobPayload) {
       case 'check_completed_experiments':
         await learning.checkCompletedExperiments();
         break;
+      case 'model_retraining':
+        await learning.trainRLModel(payload);
+        break;
       default:
         throw new Error(`Unknown job type: ${jobType}`);
     }

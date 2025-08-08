@@ -24,6 +24,7 @@ This document provides a comprehensive comparison between the existing Reprice G
 - **Deployment**: Automatic with Encore Cloud
 - **API**: Type-safe with auto-generated clients
 - **Architecture**: Event-driven with sagas for complex workflows
+- **AI/ML**: Advanced capabilities including Transformers, LSTMs, GNNs, and a unified AI pipeline.
 
 ## Detailed Feature Comparison
 
@@ -45,7 +46,8 @@ This document provides a comprehensive comparison between the existing Reprice G
 ├── SQL Database (analytics)
 ├── SQL Database (learning feedback)
 ├── SQL Database (events for audit trail)
-└── SQL Database (saga state management)
+├── SQL Database (saga state management)
+└── SQL Database (centralized feature store)
 ```
 
 **Key Differences:**
@@ -54,6 +56,7 @@ This document provides a comprehensive comparison between the existing Reprice G
 - **Migrations**: Built-in migration system with version control
 - **Performance**: Encore's optimized connection pooling and query optimization
 - **Event Sourcing**: Built-in audit trail for all domain events.
+- **Centralized Feature Store**: Unified feature management for all AI models.
 
 ### 2. Authentication & Authorization
 
@@ -112,16 +115,15 @@ export const analyzeMarket = api<MarketAnalysisRequest, MarketAnalysisResponse>(
 - Separate training/inference infrastructure
 
 #### New Implementation
-- Hybrid approach (rule-based + ML)
-- Simplified feature extraction
-- Built-in learning feedback loop
-- Event-driven workflows for asynchronous processing
+- **Advanced AI Models**: Transformer models for price prediction, LSTMs for demand forecasting, and GNNs for pattern recognition.
+- **Unified AI Pipeline**: Centralized feature store, model versioning, and automated retraining.
+- **Sophisticated Strategies**: Game theory for competitive pricing and deep reinforcement learning for optimization.
+- **Natural Language Rules**: Use Gemini to create custom strategies from natural language.
 
 **Key Improvements:**
-- **Faster Development**: Simpler initial implementation
-- **Better Maintainability**: Less complex infrastructure
-- **Incremental Learning**: Built-in feedback processing
-- **Cost Effective**: No separate ML infrastructure needed initially
+- **State-of-the-Art AI**: More accurate and adaptive pricing models.
+- **Better Maintainability**: Unified pipeline simplifies model management.
+- **Incremental Learning**: Built-in feedback processing and automated retraining.
 - **Scalability**: Asynchronous workflows handle complex tasks without blocking.
 
 ### 5. Real-time & Asynchronous Features
