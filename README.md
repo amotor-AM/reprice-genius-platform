@@ -10,6 +10,7 @@ An AI-powered eBay repricing platform built with Encore.ts that optimizes produc
 - **Learning System**: Continuous improvement through feedback analysis
 - **Risk Management**: Built-in safeguards and price boundaries
 - **Comprehensive Analytics**: Detailed performance tracking and insights
+- **Event-Driven Architecture**: Scalable and resilient workflows using sagas and an event bus.
 
 ## 🏗️ Architecture
 
@@ -26,6 +27,8 @@ An AI-powered eBay repricing platform built with Encore.ts that optimizes produc
 - **Market Service**: Market intelligence and data aggregation
 - **Graph Service**: Relationship mapping and pattern analysis
 - **Documents Service**: Invoice and CSV processing
+- **Events Service**: Centralized event bus and audit log
+- **Orchestrator Service**: Manages complex, multi-step workflows (sagas)
 
 ### Frontend (React + TypeScript)
 - **Modern UI**: Built with React, TypeScript, and Tailwind CSS
@@ -39,9 +42,10 @@ An AI-powered eBay repricing platform built with Encore.ts that optimizes produc
 - **Framework**: Encore.ts
 - **Language**: TypeScript
 - **Database**: PostgreSQL (multiple logical databases)
+- **Event Bus**: Encore Pub/Sub
 - **Authentication**: Clerk
 - **Payments**: Polar (planned)
-- **Infrastructure**: Auto-managed by Encore
+- **Infrastructure**: Auto-managed by Encore (including built-in circuit breakers)
 
 ### Frontend
 - **Framework**: React 18
@@ -140,6 +144,7 @@ The application uses multiple PostgreSQL databases:
 - **Pricing Database**: AI models, decisions, and feedback
 - **Analytics Database**: Performance metrics and insights
 - **ML Database**: Embeddings, relationships, and cache
+- **Events Database**: Audit log of all domain events
 
 ## 🔄 API Endpoints
 
@@ -159,6 +164,9 @@ The application uses multiple PostgreSQL databases:
 
 ### Analytics
 - `GET /analytics/dashboard` - Get dashboard metrics
+
+### Orchestration
+- `POST /orchestrate/reprice-all` - Trigger bulk repricing workflow
 
 ## 🧪 Testing
 

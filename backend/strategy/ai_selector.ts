@@ -3,6 +3,7 @@ import { getAuthData } from "~encore/auth";
 import { secret } from "encore.dev/config";
 import { strategyDB } from "./db";
 import { ebayDB } from "../ebay/db";
+import { strategyTopic } from "../events/topics";
 
 const geminiApiKey = secret("GeminiApiKey");
 
@@ -90,6 +91,16 @@ export const selectStrategy = api<SelectStrategyRequest, SelectStrategyResponse>
           ${JSON.stringify(selection.alternativeStrategies)}, ${JSON.stringify(req.marketContext)}
         )
       `;
+
+      // Publish StrategyChanged event
+      await strategyTopic.publish({
+        listingId: req.listingId,
+        userId: auth.userID,
+        oldStrategyId: 'previous_strategy_id', // This would need to be fetched
+        newStrategyId: selection.selectedStrategy.strategyId,
+        reason: 'ai_selection',
+        timestamp: new Date(),
+      });
 
       return selection;
     } catch (error) {

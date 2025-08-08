@@ -3,6 +3,7 @@ import { getAuthData } from "~encore/auth";
 import { pricingDB } from "./db";
 import { ebayDB } from "../ebay/db";
 import { userDB } from "../user/db";
+import { pricingTopic } from "../events/topics";
 
 export interface ApplyPriceRequest {
   listingId: string;
@@ -85,6 +86,17 @@ export const applyPrice = api<ApplyPriceRequest, ApplyPriceResponse>(
           WHERE id = ${req.decisionId}
         `;
       }
+
+      // Publish PriceChanged event
+      await pricingTopic.publish({
+        listingId: req.listingId,
+        userId: auth.userID,
+        oldPrice,
+        newPrice: req.newPrice,
+        reason: req.decisionId ? 'ai_suggestion' : 'manual_update',
+        confidence: 1.0, // Placeholder
+        timestamp: new Date(),
+      });
 
       return {
         success: true,

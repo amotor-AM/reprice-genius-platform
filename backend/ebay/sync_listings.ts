@@ -2,6 +2,7 @@ import { api, APIError } from "encore.dev/api";
 import { getAuthData } from "~encore/auth";
 import { ebayDB } from "./db";
 import { userDB } from "../user/db";
+import { listingTopic } from "../events/topics";
 
 export interface SyncListingsResponse {
   synced: number;
@@ -79,6 +80,14 @@ export const syncListings = api<void, SyncListingsResponse>(
             )
           `;
           synced++;
+
+          // Publish ListingCreated event
+          await listingTopic.publish({
+            listingId,
+            userId: auth.userID,
+            eventType: 'created',
+            timestamp: new Date(),
+          });
         }
       }
 

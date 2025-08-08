@@ -20,9 +20,10 @@ This document provides a comprehensive comparison between the existing Reprice G
 - **Database**: Unified SQL databases with automatic migrations
 - **Authentication**: Clerk
 - **Payments**: Polar (planned)
-- **Infrastructure**: Built-in, auto-managed
+- **Infrastructure**: Built-in, auto-managed (including event bus, cron jobs)
 - **Deployment**: Automatic with Encore Cloud
 - **API**: Type-safe with auto-generated clients
+- **Architecture**: Event-driven with sagas for complex workflows
 
 ## Detailed Feature Comparison
 
@@ -42,7 +43,9 @@ This document provides a comprehensive comparison between the existing Reprice G
 ├── SQL Database (eBay listings)
 ├── SQL Database (pricing decisions)
 ├── SQL Database (analytics)
-└── SQL Database (learning feedback)
+├── SQL Database (learning feedback)
+├── SQL Database (events for audit trail)
+└── SQL Database (saga state management)
 ```
 
 **Key Differences:**
@@ -50,6 +53,7 @@ This document provides a comprehensive comparison between the existing Reprice G
 - **Type-safe**: Automatic TypeScript types for all database operations
 - **Migrations**: Built-in migration system with version control
 - **Performance**: Encore's optimized connection pooling and query optimization
+- **Event Sourcing**: Built-in audit trail for all domain events.
 
 ### 2. Authentication & Authorization
 
@@ -111,14 +115,16 @@ export const analyzeMarket = api<MarketAnalysisRequest, MarketAnalysisResponse>(
 - Hybrid approach (rule-based + ML)
 - Simplified feature extraction
 - Built-in learning feedback loop
+- Event-driven workflows for asynchronous processing
 
 **Key Improvements:**
 - **Faster Development**: Simpler initial implementation
 - **Better Maintainability**: Less complex infrastructure
 - **Incremental Learning**: Built-in feedback processing
 - **Cost Effective**: No separate ML infrastructure needed initially
+- **Scalability**: Asynchronous workflows handle complex tasks without blocking.
 
-### 5. Real-time Features
+### 5. Real-time & Asynchronous Features
 
 #### Current Implementation
 - WebSocket connections
@@ -126,21 +132,23 @@ export const analyzeMarket = api<MarketAnalysisRequest, MarketAnalysisResponse>(
 - Complex state management
 
 #### New Implementation
-- Encore.ts streaming APIs
-- Built-in pub/sub topics
-- Type-safe event handling
+- Encore.ts streaming APIs for real-time UI updates
+- Built-in Pub/Sub topics for event-driven communication
+- Saga pattern for managing long-running, complex workflows
+- Type-safe event handling across services
 
 **Improvements:**
-- **Simpler Implementation**: Built-in streaming support
+- **Simpler Implementation**: Built-in streaming and pub/sub support
 - **Type Safety**: Typed message schemas
-- **Automatic Scaling**: Encore handles connection management
+- **Automatic Scaling**: Encore handles connection and queue management
+- **Resilience**: Sagas provide robust failure handling and compensation logic.
 
 ## Why This Implementation is 10X Better
 
 ### 1. **Development Velocity** (3X faster)
 - **Type Safety**: Catch errors at compile time, not runtime
 - **Auto-generated APIs**: Frontend automatically gets typed clients
-- **Built-in Infrastructure**: No manual database/Redis/queue setup
+- **Built-in Infrastructure**: No manual database/Redis/queue/event bus setup
 - **Instant Deployment**: Push to deploy, no DevOps overhead
 
 ### 2. **Operational Excellence** (5X more reliable)
@@ -148,6 +156,7 @@ export const analyzeMarket = api<MarketAnalysisRequest, MarketAnalysisResponse>(
 - **Built-in Monitoring**: Comprehensive observability out of the box
 - **Zero Downtime Deployments**: Automatic blue-green deployments
 - **Disaster Recovery**: Built-in backups and point-in-time recovery
+- **Resilience**: Built-in circuit breakers for all service-to-service calls.
 
 ### 3. **Cost Efficiency** (10X cheaper to run)
 - **No Infrastructure Management**: No need for dedicated DevOps team
@@ -159,7 +168,7 @@ export const analyzeMarket = api<MarketAnalysisRequest, MarketAnalysisResponse>(
 - **Automatic Security Updates**: Encore handles security patches
 - **Built-in Auth**: Industry-standard authentication patterns
 - **Data Encryption**: Automatic encryption at rest and in transit
-- **Audit Logging**: Comprehensive audit trails
+- **Audit Logging**: Comprehensive audit trails via event sourcing.
 
 ### 5. **Scalability** (Unlimited)
 - **Microservices Ready**: Each service can scale independently

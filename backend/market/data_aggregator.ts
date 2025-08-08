@@ -1,6 +1,6 @@
 import { secret } from "encore.dev/config";
 import { marketDB } from "./db";
-import { marketEventsTopic } from "./events";
+import { marketTopic } from "../events/topics";
 import { setCache } from "./cache";
 
 const rapidApiKey = secret("RapidApiKey");
@@ -85,9 +85,11 @@ export async function aggregateCategoryData(categoryId: string) {
   await setCache(`market_data:${categoryId}`, aggregatedData, 3600); // Cache for 1 hour
 
   // Publish market event
-  await marketEventsTopic.publish({
-    eventType: 'trend_update',
-    payload: { categoryId, data: aggregatedData },
+  await marketTopic.publish({
+    eventType: 'market_shift',
+    categoryId,
+    shiftType: 'price_trend_change',
+    magnitude: (ebayData.avgPrice - 45) / 45,
     timestamp: new Date(),
   });
 
