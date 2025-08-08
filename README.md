@@ -14,6 +14,7 @@ An AI-powered eBay repricing platform built with Encore.ts that optimizes produc
 - **Profit Maximization**: Advanced profitability optimization, LTV modeling, and risk assessment.
 - **AI Strategy Composer**: Generate complex pricing strategies from simple natural language descriptions.
 - **Proprietary Data Moat**: Creates unique data advantages through synthetic data, crowdsourcing, and network effects.
+- **Autonomous Optimization**: Self-running systems with AutoML, autonomous experimentation, and self-healing capabilities.
 - **Risk Management**: Built-in safeguards and price boundaries
 - **Comprehensive Analytics**: Detailed performance tracking and insights
 - **Event-Driven Architecture**: Scalable and resilient workflows using sagas and an event bus.
@@ -43,6 +44,7 @@ An AI-powered eBay repricing platform built with Encore.ts that optimizes produc
 - **Profit Service**: Advanced profitability optimization and financial modeling.
 - **Composer Service**: AI-powered strategy generation from natural language.
 - **Moat Service**: Creates proprietary data advantages.
+- **Auto Service**: Self-running optimization systems.
 - **Cache Service**: High-performance caching layer
 - **Monitoring Service**: Error tracking and performance monitoring
 - **Notifications Service**: Alert system for price changes

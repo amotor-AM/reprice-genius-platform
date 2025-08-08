@@ -32,6 +32,7 @@ This document provides a comprehensive comparison between the existing Reprice G
 - **Profit Service**: Advanced profitability optimization, LTV modeling, and risk assessment.
 - **Composer Service**: AI-powered strategy generation from natural language descriptions.
 - **Moat Service**: Creates proprietary data advantages through synthetic data, crowdsourcing, and network effects.
+- **Auto Service**: Self-running optimization systems with AutoML, autonomous experimentation, and self-healing.
 - **Data Pipeline**: Dedicated service for ETL/ELT, data lake management, and data quality.
 - **Multi-Marketplace**: Abstracted marketplace service with adapters for eBay, Amazon, Shopify, etc.
 - **AI Copilot**: Natural language interface for platform control and conversational AI.
@@ -63,6 +64,7 @@ This document provides a comprehensive comparison between the existing Reprice G
 ├── SQL Database (profit models, LTV, risk)
 ├── SQL Database (composed strategies, simulations)
 ├── SQL Database (proprietary data, benchmarks, synthetic data)
+├── SQL Database (autonomous optimization jobs, experiments, reports)
 ├── SQL Database (events for audit trail)
 ├── SQL Database (saga state management)
 ├── SQL Database (centralized feature store)
